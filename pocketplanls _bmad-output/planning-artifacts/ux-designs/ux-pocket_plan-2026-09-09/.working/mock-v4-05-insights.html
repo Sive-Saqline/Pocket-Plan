@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PocketPlan — AI Monthly Insights (v4)</title>
+<style>
+:root {
+  --accent: #1F7A8C; --accent-soft: rgba(31,122,140,0.06);
+  --warning: #E0A92A; --success: #2E8B57;
+  --surface: #FFFFFF; --surface-muted: #F5F7F8;
+  --border: #E3E7E8;
+  --text: #0F1B1F; --text-muted: #5C6B70; --text-inverse: #FFFFFF;
+  --radius-md: 8px; --radius-lg: 12px; --radius-pill: 9999px;
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 20px; --s6: 24px; --s8: 32px;
+  --font: Inter, system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; overflow: hidden; }
+body { font-family: var(--font); font-size: 16px; line-height: 24px; color: var(--text); background: var(--surface-muted); -webkit-font-smoothing: antialiased; }
+html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; }
+html, body { scrollbar-width: none; -ms-overflow-style: none; }
+.phone {
+  width: 375px; min-height: 812px; margin: 24px auto;
+  background: var(--surface-muted); border: 1px solid var(--border);
+  border-radius: 32px; overflow: hidden; position: relative;
+}
+.statusbar { height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; font-size: 14px; font-weight: 600; }
+.appbar {
+  height: 56px; background: var(--surface-muted);
+  display: flex; align-items: center; gap: var(--s2);
+  padding: 0 var(--s4); border-bottom: 1px solid var(--border);
+}
+.back { background: transparent; border: 0; cursor: pointer; font-size: 18px; color: var(--accent); padding: var(--s2); font-family: inherit; }
+.appbar h1 { font-size: 16px; font-weight: 600; margin: 0; flex: 1; }
+.icon-btn { background: transparent; border: 0; cursor: pointer; color: var(--accent); font-size: 14px; font-weight: 600; font-family: inherit; padding: var(--s2); }
+
+.content { padding: var(--s4); padding-bottom: 96px; }
+
+/* Scope selector */
+.scope {
+  display: flex; gap: var(--s1);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 4px;
+  margin-bottom: var(--s4);
+  box-shadow: 0 1px 2px rgba(15,27,31,0.06);
+}
+.scope button {
+  flex: 1;
+  padding: 8px 12px;
+  background: transparent; border: 0;
+  font-family: inherit; font-size: 13px; font-weight: 600;
+  color: var(--text-muted); cursor: pointer;
+  border-radius: var(--radius-pill);
+}
+.scope button.active {
+  background: var(--accent); color: var(--text-inverse);
+}
+
+/* Hero summary card */
+.hero {
+  background: linear-gradient(135deg, var(--accent) 0%, #2B9BB4 100%);
+  color: var(--text-inverse);
+  border-radius: var(--radius-lg);
+  padding: var(--s5);
+  margin-bottom: var(--s4);
+  position: relative;
+  overflow: hidden;
+}
+.hero .badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: rgba(255,255,255,0.18);
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  margin-bottom: var(--s3);
+}
+.hero h2 {
+  margin: 0 0 var(--s2);
+  font-size: 18px; font-weight: 700;
+  line-height: 26px;
+}
+.hero p {
+  margin: 0;
+  font-size: 14px;
+  opacity: 0.94;
+  line-height: 22px;
+}
+.hero .grounded {
+  margin-top: var(--s4);
+  padding-top: var(--s3);
+  border-top: 1px solid rgba(255,255,255,0.18);
+  font-size: 11px; opacity: 0.75;
+  display: flex; align-items: center; gap: 4px;
+}
+
+/* Section card */
+.card {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: var(--s4);
+  margin-bottom: var(--s3);
+  box-shadow: 0 1px 2px rgba(15,27,31,0.06);
+}
+.card .label {
+  font-size: 11px; font-weight: 700;
+  color: var(--text-muted); text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex; align-items: center; gap: var(--s2);
+  margin-bottom: var(--s2);
+}
+.card .label .badge {
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 10px;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  background: var(--accent-soft); color: var(--accent);
+  font-weight: 700;
+}
+.card .label .badge.warn { background: rgba(224,169,42,0.12); color: var(--warning); }
+.card .label .badge.ok { background: rgba(46,139,87,0.12); color: var(--success); }
+.card h3 {
+  margin: 0 0 var(--s2);
+  font-size: 15px; font-weight: 700;
+}
+.card p {
+  margin: 0;
+  font-size: 14px; color: var(--text); line-height: 22px;
+}
+.card p .num {
+  font-family: var(--mono); font-weight: 700;
+}
+
+/* Inline pill */
+.pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: var(--accent-soft); color: var(--accent);
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 12px; font-weight: 700;
+  font-family: var(--mono);
+}
+
+/* Recurring suggestion — Section 6.18 */
+.rec-card {
+  background: var(--surface);
+  border: 1px dashed var(--accent);
+  border-radius: var(--radius-lg);
+  padding: var(--s4);
+  margin-bottom: var(--s4);
+}
+.rec-card .head {
+  display: flex; align-items: center; gap: var(--s2);
+  margin-bottom: var(--s2);
+}
+.rec-card .head .badge {
+  background: var(--accent); color: var(--text-inverse);
+  font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  padding: 3px 8px; border-radius: var(--radius-pill);
+}
+.rec-card p {
+  margin: 0 0 var(--s3);
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.rec-card .pattern {
+  display: flex; gap: var(--s3); align-items: center;
+  margin-bottom: var(--s3);
+}
+.rec-card .pattern .num {
+  font-family: var(--mono); font-weight: 700; font-size: 18px;
+}
+.rec-card .pattern .meta { font-size: 12px; color: var(--text-muted); }
+.rec-card .pattern .meta strong { color: var(--text); font-weight: 600; }
+.rec-card .actions { display: flex; gap: var(--s2); }
+.rec-card .actions button {
+  flex: 1; padding: 10px;
+  border: 0; border-radius: var(--radius-md);
+  font-family: inherit; font-size: 13px; font-weight: 600;
+  cursor: pointer;
+}
+.rec-card .actions .primary { background: var(--accent); color: var(--text-inverse); }
+.rec-card .actions .secondary { background: var(--surface-muted); color: var(--text); }
+
+/* Disclaim */
+.disclaim {
+  font-size: 11px; color: var(--text-muted);
+  text-align: center;
+  margin-top: var(--s3);
+  padding: 0 var(--s4);
+}
+
+/* Tabbar */
+.tabbar {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  height: 64px; background: var(--surface);
+  border-top: 1px solid var(--border); display: flex;
+}
+.tab {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 2px;
+  font-size: 12px; color: var(--text-muted); position: relative;
+}
+.tab.active { color: var(--accent); font-weight: 600; }
+.tab.active::before {
+  content: ""; position: absolute; top: 0; left: 25%; right: 25%;
+  height: 3px; background: var(--accent);
+}
+.tab .icon { font-size: 20px; }
+.tab { text-decoration: none; cursor: pointer; }
+.tab:active { background: var(--surface-muted); }
+</style>
+<script>
+document.addEventListener("click", function (e) {
+  var t = e.target.closest(".tab[data-screen]");
+  if (!t) return;
+  e.preventDefault();
+  try { window.parent.postMessage({ type: "pocketplan:navigate", file: t.getAttribute("data-screen") }, "*"); } catch (_) {}
+  setTimeout(function () { try { window.top.location.href = t.getAttribute("href"); } catch (_) {} }, 50);
+});
+</script>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar"><span>9:41</span><span>•••</span></div>
+  <div class="appbar">
+    <button class="back">‹</button>
+    <h1>AI insights</h1>
+    <button class="icon-btn">Refresh</button>
+  </div>
+
+  <div class="content">
+    <!-- Scope toggle — Section 6.9 (reports scoped to user or group) -->
+    <div class="scope">
+      <button class="active">Personal</button>
+      <button>Mess group</button>
+      <button>Sajek trip</button>
+    </div>
+
+    <!-- Hero summary — Section 6.16 -->
+    <div class="hero">
+      <span class="badge">✨ September</span>
+      <h2>Food is up 18%, Shopping is tracking under budget.</h2>
+      <p>
+        You've spent <strong style="font-family:var(--mono);">৳14,280</strong> of your
+        <strong style="font-family:var(--mono);">৳35,000</strong> plan across 9 days. At this pace,
+        you'll finish the month at roughly
+        <strong style="font-family:var(--mono);">৳31,800</strong>.
+      </p>
+      <div class="grounded">ⓘ Generated from your actual categories and budget — informational, not advice.</div>
+    </div>
+
+    <!-- Anomaly note -->
+    <div class="card">
+      <div class="label">
+        Anomaly
+        <span class="badge warn">One entry</span>
+      </div>
+      <h3>৳3,200 at Agora on 25 Aug</h3>
+      <p>
+        Your typical <span class="pill">Shopping</span> expense is ~৳450. This one is
+        <span class="num">7×</span> larger than your recent median and accounts for
+        <span class="num">22%</span> of August's spending. If it was the planned weekly shop, no action needed — otherwise it may be worth a second look.
+      </p>
+    </div>
+
+    <!-- Forecast -->
+    <div class="card">
+      <div class="label">
+        Forecast
+        <span class="badge">Next month</span>
+      </div>
+      <h3>October projected: ~৳33,400</h3>
+      <p>
+        Based on the last 3 months, expect
+        <span class="pill">Bills</span> to rise by ৳1,200 (internet annual renewal due) and
+        <span class="pill">Food</span> to stay flat. Keep
+        <span class="pill">Transport</span> under ৳5,000 — you've been close to its monthly cap.
+      </p>
+    </div>
+
+    <!-- Recurring-pattern detection — Section 6.18 -->
+    <div class="rec-card">
+      <div class="head">
+        <span class="badge">Pattern</span>
+        <strong style="font-size: 14px;">Found a repeating expense</strong>
+      </div>
+      <p>
+        "Wi-Fi — Internet" ~৳1,200 has been logged manually for the last 3 months.
+      </p>
+      <div class="pattern">
+        <span class="num">৳1,200</span>
+        <div class="meta">
+          <strong>Bills · Monthly</strong><br>
+          Next due 30 Sep
+        </div>
+      </div>
+      <div class="actions">
+        <button class="secondary">Not now</button>
+        <button class="primary">Convert to template</button>
+      </div>
+    </div>
+
+    <div class="disclaim">
+      Insights are summaries of your own data. Not financial advice.
+    </div>
+  </div>
+
+  <div class="tabbar">
+    <a class="tab" data-screen=".working/mock-v4-01-home.html" href=".working/mock-v4-01-home.html"><div class="icon">⌂</div>Home</a>
+    <a class="tab" data-screen=".working/mock-v4-02-groups-list.html" href=".working/mock-v4-02-groups-list.html"><div class="icon">👥</div>Groups</a>
+    <a class="tab" data-screen=".working/mock-v4-04-add-expense-ai.html" href=".working/mock-v4-04-add-expense-ai.html"><div class="icon">＋</div>Add</a>
+    <a class="tab active" data-screen=".working/mock-v4-05-insights.html" href=".working/mock-v4-05-insights.html"><div class="icon">▤</div>Reports</a>
+    <a class="tab" data-screen=".working/mock-v4-06-profile.html" href=".working/mock-v4-06-profile.html"><div class="icon">•••</div>More</a>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -m http.server 8765)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:8765/prototype.html)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://127.0.0.1:8765/prototype.html)",
+      "Bash(/c/Python314/python.exe -m http.server 8765)",
+      "Bash(powershell.exe -Command \"Start-Process ''mock-01-home.html''; Start-Process ''mock-02-add-expense.html''; Start-Process ''mock-03-expenses-list.html''; Start-Process ''mock-04-confirm-recurring.html''; Start-Process ''mock-05-reports-by-category.html''\")",
+      "Bash(PROTO=\"/c/Users/BS01655/Documents/Pocket_Plan/Pocket_Plan/pocketplanls _bmad-output/planning-artifacts/ux-designs/ux-pocket_plan-2026-09-09/prototype.html\")",
+      "Read(//c/Users/BS01655/Documents/Pocket_Plan/Pocket_Plan/pocketplanls _bmad-output/planning-artifacts/ux-designs/ux-pocket_plan-2026-09-09/**)",
+      "Bash(rm -f \"$PROTO\")",
+      "Bash(command -v python)",
+      "Bash(command -v python3)",
+      "Bash(command -v node)",
+      "Bash(/c/Python314/python -c \"print\\(''ok''\\)\")",
+      "Bash(/c/Python314/python append_icons.py)",
+      "Bash(rm append_icons.py)",
+      "Bash(/c/Python314/python append_main.py)",
+      "Bash(rm append_main.py)",
+      "Bash(/c/Python314/python append_actions.py)",
+      "Bash(rm append_actions.py)",
+      "Bash(/c/Python314/python append_screens.py)",
+      "Bash(rm append_screens.py)",
+      "Bash(/c/Python314/python append_final.py)",
+      "Bash(rm append_final.py)",
+      "Bash(/c/Python314/python:*)",
+      "Bash(node -e \":*)",
+      "Bash(node test_smoke.js)",
+      "Bash(mv test_smoke.js test_smoke.cjs)",
+      "Bash(node test_smoke.cjs)"
+    ]
+  }
+}

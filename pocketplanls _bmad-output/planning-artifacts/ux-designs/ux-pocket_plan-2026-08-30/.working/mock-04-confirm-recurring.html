@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PocketPlan — Confirm recurring mock</title>
+<style>
+:root {
+  --accent: #1F7A8C; --accent-pressed: #185965;
+  --warning: #E0A92A;
+  --surface: #FFFFFF; --surface-muted: #F5F7F8;
+  --border: #E3E7E8;
+  --text: #0F1B1F; --text-muted: #5C6B70; --text-inverse: #FFFFFF;
+  --overlay: rgba(15, 27, 31, 0.5);
+  --radius-md: 8px; --radius-lg: 12px; --radius-xl: 16px; --radius-pill: 9999px;
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 20px; --s6: 24px;
+  --font: Inter, system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: var(--font); font-size: 16px; line-height: 24px;
+  color: var(--text); background: var(--overlay);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+.phone {
+  width: 375px; min-height: 812px; margin: 24px auto;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 32px; overflow: hidden; position: relative;
+  display: flex; flex-direction: column;
+}
+.sheet {
+  margin-top: auto;
+  background: var(--surface);
+  border-top-left-radius: var(--radius-xl);
+  border-top-right-radius: var(--radius-xl);
+  box-shadow: 0 -8px 24px rgba(15,27,31,0.12);
+  padding: var(--s3) var(--s4) var(--s4);
+}
+.handle {
+  width: 40px; height: 4px;
+  background: var(--border);
+  border-radius: var(--radius-pill);
+  margin: 0 auto var(--s3);
+}
+.sheet-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: var(--s2);
+}
+.sheet-header h2 { font-size: 20px; font-weight: 600; margin: 0; }
+.sheet-header button {
+  background: transparent; border: 0;
+  color: var(--text-muted); font-size: 14px;
+  font-family: inherit; cursor: pointer; padding: var(--s2);
+}
+.sheet-subtitle {
+  font-size: 14px; color: var(--text-muted);
+  margin-bottom: var(--s5);
+}
+
+.field {
+  margin-bottom: var(--s4);
+}
+.field-label {
+  font-size: 12px; font-weight: 600;
+  color: var(--text-muted); text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--s2);
+}
+.field-row {
+  display: flex; gap: var(--s3); align-items: center;
+}
+.amount-display {
+  flex: 1; font-family: var(--mono);
+  font-size: 24px; font-weight: 700;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  display: flex; align-items: baseline; gap: var(--s2);
+}
+.amount-display .currency { font-size: 16px; color: var(--text-muted); }
+.amount-display .value { flex: 1; }
+
+.icon-pick {
+  display: flex; gap: var(--s2);
+}
+.icon-pick .chip {
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: var(--s3) var(--s2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  font-size: 12px;
+  cursor: pointer;
+}
+.icon-pick .chip.active {
+  border-color: var(--accent);
+  background: rgba(31,122,140,0.06);
+  color: var(--accent);
+  font-weight: 600;
+}
+.icon-pick .chip .emoji { font-size: 22px; }
+
+.account-row {
+  display: flex; gap: var(--s2);
+  flex-wrap: wrap;
+}
+.account-row .chip {
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  font-size: 14px;
+  cursor: pointer;
+}
+.account-row .chip.active {
+  border-color: var(--accent); color: var(--accent);
+  background: rgba(31,122,140,0.06); font-weight: 600;
+}
+
+.input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: 16px;
+  font-family: inherit;
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+}
+.input:focus { border-color: var(--accent); }
+
+.readonly-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 14px;
+  background: var(--surface-muted);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  color: var(--text-muted);
+}
+.readonly-row strong { color: var(--text); font-weight: 500; }
+
+.actions {
+  display: flex; gap: var(--s3);
+  margin-top: var(--s5);
+}
+.btn {
+  flex: 1; height: 52px;
+  border-radius: var(--radius-md);
+  font-size: 16px; font-weight: 600;
+  font-family: inherit; border: 0; cursor: pointer;
+}
+.btn-secondary { background: var(--surface-muted); color: var(--text); }
+.btn-primary { background: var(--accent); color: var(--text-inverse); }
+
+.queue {
+  display: flex; gap: 4px; justify-content: center;
+  margin-bottom: var(--s4);
+}
+.queue .dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.queue .dot.pending { background: var(--border); }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="sheet">
+    <div class="handle"></div>
+
+    <!-- Queue indicator: 1 of 1 due -->
+    <div class="queue">
+      <div class="dot"></div>
+    </div>
+
+    <div class="sheet-header">
+      <h2>Confirm recurring expense</h2>
+      <button>Cancel</button>
+    </div>
+    <div class="sheet-subtitle">
+      1 recurring expense is due. Review and confirm to create an actual expense entry.
+    </div>
+
+    <!-- Amount (editable) -->
+    <div class="field">
+      <div class="field-label">Amount</div>
+      <div class="amount-display">
+        <span class="currency">৳</span>
+        <span class="value">1,200</span>
+      </div>
+    </div>
+
+    <!-- Category (editable) -->
+    <div class="field">
+      <div class="field-label">Category</div>
+      <div class="icon-pick">
+        <div class="chip"><div class="emoji">🍔</div>Food</div>
+        <div class="chip"><div class="emoji">🚗</div>Transport</div>
+        <div class="chip active"><div class="emoji">🧾</div>Bills</div>
+        <div class="chip"><div class="emoji">🛍️</div>Shopping</div>
+      </div>
+    </div>
+
+    <!-- Account (editable) -->
+    <div class="field">
+      <div class="field-label">Account</div>
+      <div class="account-row">
+        <div class="chip">Cash</div>
+        <div class="chip active">City Bank</div>
+        <div class="chip">bKash</div>
+      </div>
+    </div>
+
+    <!-- Description (editable) -->
+    <div class="field">
+      <div class="field-label">Description</div>
+      <input class="input" value="Internet — Sep" />
+    </div>
+
+    <!-- Read-only context -->
+    <div class="field">
+      <div class="readonly-row">
+        <span>Frequency</span>
+        <strong>Monthly</strong>
+      </div>
+    </div>
+    <div class="field">
+      <div class="readonly-row">
+        <span>Due</span>
+        <strong>30 Aug 2026</strong>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-secondary">Skip</button>
+      <button class="btn btn-primary">Confirm</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>

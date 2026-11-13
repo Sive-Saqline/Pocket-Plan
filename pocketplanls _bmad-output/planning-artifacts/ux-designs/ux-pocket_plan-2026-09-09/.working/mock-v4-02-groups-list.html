@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PocketPlan — Groups list (v4)</title>
+<style>
+:root {
+  --accent: #1F7A8C; --accent-soft: rgba(31,122,140,0.06);
+  --warning: #E0A92A; --danger: #C0392B; --success: #2E8B57;
+  --surface: #FFFFFF; --surface-muted: #F5F7F8;
+  --border: #E3E7E8;
+  --text: #0F1B1F; --text-muted: #5C6B70; --text-inverse: #FFFFFF;
+  --radius-md: 8px; --radius-lg: 12px; --radius-pill: 9999px;
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 20px; --s6: 24px;
+  --font: Inter, system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; overflow: hidden; }
+body { font-family: var(--font); font-size: 16px; line-height: 24px; color: var(--text); background: var(--surface-muted); -webkit-font-smoothing: antialiased; }
+html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; }
+html, body { scrollbar-width: none; -ms-overflow-style: none; }
+.phone {
+  width: 375px; min-height: 812px; margin: 24px auto;
+  background: var(--surface-muted); border: 1px solid var(--border);
+  border-radius: 32px; overflow: hidden; position: relative;
+}
+.statusbar { height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; font-size: 14px; font-weight: 600; }
+.appbar {
+  height: 56px; background: var(--surface-muted);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 var(--s4); border-bottom: 1px solid var(--border);
+}
+.appbar h1 { font-size: 20px; font-weight: 600; margin: 0; }
+.icon-btn {
+  background: transparent; border: 0; cursor: pointer;
+  color: var(--accent); font-size: 22px; font-family: inherit;
+  padding: var(--s2);
+}
+
+.content { padding: var(--s4); padding-bottom: 96px; }
+
+/* Net summary band */
+.summary {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: var(--s4);
+  display: flex; gap: var(--s4);
+  margin-bottom: var(--s4);
+  box-shadow: 0 1px 2px rgba(15,27,31,0.06);
+}
+.summary .col { flex: 1; }
+.summary .label {
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.5px; color: var(--text-muted);
+}
+.summary .amount {
+  font-family: var(--mono);
+  font-size: 20px; font-weight: 700;
+  margin-top: 4px;
+}
+.summary .owed .amount { color: var(--success); }
+.summary .owes .amount { color: var(--danger); }
+.summary .divider { width: 1px; background: var(--border); }
+
+/* Group card */
+.group-card {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: var(--s4);
+  margin-bottom: var(--s3);
+  box-shadow: 0 1px 2px rgba(15,27,31,0.06);
+  cursor: pointer;
+}
+.group-card:active { background: var(--surface-muted); }
+
+.group-card .head {
+  display: flex; align-items: center; gap: var(--s3);
+  margin-bottom: var(--s3);
+}
+.group-card .icon {
+  width: 44px; height: 44px;
+  background: var(--accent-soft);
+  border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+}
+.group-card .title { flex: 1; min-width: 0; }
+.group-card .title strong { display: block; font-size: 16px; font-weight: 700; }
+.group-card .title span { font-size: 12px; color: var(--text-muted); }
+.group-card .chip {
+  padding: 4px 10px; border-radius: var(--radius-pill);
+  font-size: 12px; font-weight: 600;
+}
+.chip.owed { background: rgba(46,139,87,0.10); color: var(--success); }
+.chip.owes { background: rgba(192,57,43,0.10); color: var(--danger); }
+.chip.settled { background: var(--surface-muted); color: var(--text-muted); }
+
+/* Members avatars row */
+.members {
+  display: flex; align-items: center; gap: var(--s2);
+  margin-top: var(--s3);
+  padding-top: var(--s3);
+  border-top: 1px solid var(--border);
+}
+.avatars { display: flex; }
+.avatar-stack {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--accent); color: var(--text-inverse);
+  border: 2px solid var(--surface);
+  margin-left: -8px; display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 600;
+}
+.avatar-stack:first-child { margin-left: 0; }
+.avatar-stack.more { background: var(--surface-muted); color: var(--text-muted); }
+.members .meta {
+  margin-left: auto; font-size: 12px; color: var(--text-muted);
+}
+.members .meta strong {
+  font-family: var(--mono); color: var(--text); font-weight: 600;
+}
+
+/* FAB */
+.fab {
+  position: absolute; bottom: 80px; right: 16px;
+  width: 56px; height: 56px;
+  background: var(--accent); color: var(--text-inverse);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; font-weight: 300;
+  border: 0; cursor: pointer;
+  box-shadow: 0 4px 8px rgba(15,27,31,0.16), 0 8px 16px rgba(15,27,31,0.12);
+}
+
+/* Tabbar */
+.tabbar {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  height: 64px; background: var(--surface);
+  border-top: 1px solid var(--border); display: flex;
+}
+.tab {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 2px;
+  font-size: 12px; color: var(--text-muted); position: relative;
+}
+.tab.active { color: var(--accent); font-weight: 600; }
+.tab.active::before {
+  content: ""; position: absolute; top: 0; left: 25%; right: 25%;
+  height: 3px; background: var(--accent);
+}
+.tab .icon { font-size: 20px; }
+.tab .badge { position: absolute; top: 8px; right: 30%; width: 8px; height: 8px; background: #C0392B; border-radius: 50%; }
+.tab { text-decoration: none; cursor: pointer; }
+.tab:active { background: var(--surface-muted); }
+</style>
+<script>
+document.addEventListener("click", function (e) {
+  var t = e.target.closest(".tab[data-screen]");
+  if (!t) return;
+  e.preventDefault();
+  try { window.parent.postMessage({ type: "pocketplan:navigate", file: t.getAttribute("data-screen") }, "*"); } catch (_) {}
+  setTimeout(function () { try { window.top.location.href = t.getAttribute("href"); } catch (_) {} }, 50);
+});
+</script>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar"><span>9:41</span><span>•••</span></div>
+  <div class="appbar">
+    <h1>Groups</h1>
+    <button class="icon-btn" title="Create group">+</button>
+  </div>
+
+  <div class="content">
+    <!-- Net across all groups -->
+    <div class="summary">
+      <div class="col owed">
+        <div class="label">You are owed</div>
+        <div class="amount">৳1,390</div>
+      </div>
+      <div class="divider"></div>
+      <div class="col owes">
+        <div class="label">You owe</div>
+        <div class="amount">৳830</div>
+      </div>
+    </div>
+
+    <!-- Mess group -->
+    <div class="group-card">
+      <div class="head">
+        <div class="icon">🏠</div>
+        <div class="title">
+          <strong>Mess — Bashundhara</strong>
+          <span>4 members · monthly budget ৳20,000</span>
+        </div>
+        <span class="chip owed">+৳1,240</span>
+      </div>
+      <div class="members">
+        <div class="avatars">
+          <div class="avatar-stack">R</div>
+          <div class="avatar-stack" style="background:#7A5C3A;">S</div>
+          <div class="avatar-stack" style="background:#5C7A3A;">N</div>
+          <div class="avatar-stack" style="background:#7A3A5C;">T</div>
+        </div>
+        <div class="meta">
+          Sep so far · <strong>৳14,200</strong> of ৳20,000
+        </div>
+      </div>
+    </div>
+
+    <!-- Trip group -->
+    <div class="group-card">
+      <div class="head">
+        <div class="icon">✈️</div>
+        <div class="title">
+          <strong>Sajek Trip 2026</strong>
+          <span>6 members · 24–28 Sep</span>
+        </div>
+        <span class="chip owes">−৳680</span>
+      </div>
+      <div class="members">
+        <div class="avatars">
+          <div class="avatar-stack">R</div>
+          <div class="avatar-stack" style="background:#7A5C3A;">S</div>
+          <div class="avatar-stack" style="background:#5C7A3A;">N</div>
+          <div class="avatar-stack" style="background:#7A3A5C;">T</div>
+          <div class="avatar-stack" style="background:#3A5C7A;">A</div>
+          <div class="avatar-stack" style="background:#5C3A7A;">M</div>
+        </div>
+        <div class="meta">
+          Trip total · <strong>৳42,600</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- Subscriptions group -->
+    <div class="group-card">
+      <div class="head">
+        <div class="icon">🎬</div>
+        <div class="title">
+          <strong>Home Subscriptions</strong>
+          <span>3 members · 2 recurring</span>
+        </div>
+        <span class="chip owes">−৳150</span>
+      </div>
+      <div class="members">
+        <div class="avatars">
+          <div class="avatar-stack">R</div>
+          <div class="avatar-stack" style="background:#7A5C3A;">S</div>
+          <div class="avatar-stack" style="background:#5C7A3A;">N</div>
+        </div>
+        <div class="meta">
+          This month · <strong>৳1,450</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settled group -->
+    <div class="group-card" style="opacity:0.85;">
+      <div class="head">
+        <div class="icon">🎂</div>
+        <div class="title">
+          <strong>Reunion Dinner</strong>
+          <span>5 members · ended 12 Aug</span>
+        </div>
+        <span class="chip settled">settled</span>
+      </div>
+      <div class="members">
+        <div class="avatars">
+          <div class="avatar-stack">R</div>
+          <div class="avatar-stack" style="background:#7A5C3A;">S</div>
+          <div class="avatar-stack" style="background:#5C7A3A;">N</div>
+          <div class="avatar-stack" style="background:#7A3A5C;">T</div>
+          <div class="avatar-stack more">+1</div>
+        </div>
+        <div class="meta">
+          Final spend · <strong>৳8,800</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button class="fab">+</button>
+
+  <div class="tabbar">
+    <a class="tab" data-screen=".working/mock-v4-01-home.html" href=".working/mock-v4-01-home.html"><div class="icon">⌂</div>Home</a>
+    <a class="tab active" data-screen=".working/mock-v4-02-groups-list.html" href=".working/mock-v4-02-groups-list.html"><div class="icon">👥</div>Groups</a>
+    <a class="tab" data-screen=".working/mock-v4-04-add-expense-ai.html" href=".working/mock-v4-04-add-expense-ai.html"><div class="icon">＋</div>Add</a>
+    <a class="tab" data-screen=".working/mock-v4-05-insights.html" href=".working/mock-v4-05-insights.html"><div class="icon">▤</div>Reports</a>
+    <a class="tab" data-screen=".working/mock-v4-06-profile.html" href=".working/mock-v4-06-profile.html"><div class="icon">•••</div>More<span class="badge"></span></a>
+  </div>
+</div>
+</body>
+</html>

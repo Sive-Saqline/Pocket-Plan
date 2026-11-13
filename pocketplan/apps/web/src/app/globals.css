@@ -1,0 +1,105 @@
+@import "tailwindcss";
+
+/* Tokens from ux-pocket_plan-2026-08-30/DESIGN.md */
+:root {
+  --accent: #1f7a8c;
+  --accent-hover: #266f7f;
+  --accent-pressed: #185965;
+  --warning: #e0a92a;
+  --danger: #c0392b;
+  --success: #2e8b57;
+  --surface: #ffffff;
+  --surface-muted: #f5f7f8;
+  --surface-elevated: #ffffff;
+  --border: #e3e7e8;
+  --text: #0f1b1f;
+  --text-muted: #5c6b70;
+  --text-inverse: #ffffff;
+  --chart-1: #1f7a8c;
+  --chart-2: #e0a92a;
+  --chart-3: #8e44ad;
+  --chart-4: #2e8b57;
+  --chart-5: #c0392b;
+  --chart-6: #3d5a80;
+  --overlay: rgba(15, 27, 31, 0.5);
+  color-scheme: light;
+}
+
+/* Dark tokens: an explicit choice (Profile → Theme) wins; "system" follows the OS. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --accent: #4fb6c9;
+    --accent-hover: #62c5d6;
+    --accent-pressed: #3a98aa;
+    --warning: #f2c45a;
+    --danger: #e76b5e;
+    --success: #5bc07f;
+    --surface: #152024;
+    --surface-muted: #0f1b1f;
+    --surface-elevated: #1c2c32;
+    --border: #2a3a3f;
+    --text: #f0f4f5;
+    --text-muted: #a4b2b6;
+    --text-inverse: #0f1b1f;
+    --chart-1: #4fb6c9;
+    --chart-2: #f2c45a;
+    --chart-3: #b57bc9;
+    --chart-4: #5bc07f;
+    --chart-5: #e76b5e;
+    --chart-6: #7b96b8;
+    --overlay: rgba(0, 0, 0, 0.6);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --accent: #4fb6c9;
+  --accent-hover: #62c5d6;
+  --accent-pressed: #3a98aa;
+  --warning: #f2c45a;
+  --danger: #e76b5e;
+  --success: #5bc07f;
+  --surface: #152024;
+  --surface-muted: #0f1b1f;
+  --surface-elevated: #1c2c32;
+  --border: #2a3a3f;
+  --text: #f0f4f5;
+  --text-muted: #a4b2b6;
+  --text-inverse: #0f1b1f;
+  --chart-1: #4fb6c9;
+  --chart-2: #f2c45a;
+  --chart-3: #b57bc9;
+  --chart-4: #5bc07f;
+  --chart-5: #e76b5e;
+  --chart-6: #7b96b8;
+  --overlay: rgba(0, 0, 0, 0.6);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-pressed: var(--accent-pressed);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-success: var(--success);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-text-inverse: var(--text-inverse);
+  --shadow-card: 0 1px 2px rgba(15, 27, 31, 0.06), 0 1px 3px rgba(15, 27, 31, 0.08);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-jetbrains-mono);
+}
+
+body {
+  background: var(--surface-muted);
+  color: var(--text);
+}
+
+dialog::backdrop {
+  background: var(--overlay);
+}

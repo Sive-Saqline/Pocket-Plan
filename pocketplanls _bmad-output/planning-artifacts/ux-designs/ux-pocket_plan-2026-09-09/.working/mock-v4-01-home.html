@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PocketPlan — Home dashboard (v4)</title>
+<style>
+/* Design tokens — carried over from v3 to keep visual continuity. */
+:root {
+  --accent: #1F7A8C; --accent-pressed: #185965;
+  --accent-soft: rgba(31,122,140,0.06);
+  --warning: #E0A92A; --danger: #C0392B; --success: #2E8B57;
+  --surface: #FFFFFF; --surface-muted: #F5F7F8;
+  --border: #E3E7E8;
+  --text: #0F1B1F; --text-muted: #5C6B70; --text-inverse: #FFFFFF;
+  --radius-md: 8px; --radius-lg: 12px; --radius-pill: 9999px;
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 20px; --s6: 24px; --s8: 32px;
+  --font: Inter, system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; overflow: hidden; }
+body {
+  font-family: var(--font); font-size: 16px; line-height: 24px;
+  color: var(--text); background: var(--surface-muted);
+  -webkit-font-smoothing: antialiased;
+}
+/* Hide scrollbars completely (web + firefox) */
+html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; }
+html, body { scrollbar-width: none; -ms-overflow-style: none; }
+.phone {
+  width: 375px; min-height: 812px; margin: 24px auto;
+  background: var(--surface-muted); border: 1px solid var(--border);
+  border-radius: 32px; overflow: hidden; position: relative;
+}
+.statusbar { height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; font-size: 14px; font-weight: 600; }
+.appbar {
+  height: 56px; background: var(--surface-muted);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 var(--s4);
+}
+.appbar .greet { font-size: 14px; color: var(--text-muted); }
+.appbar h1 { font-size: 22px; font-weight: 700; margin: 0; line-height: 28px; }
+.appbar .avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--accent); color: var(--text-inverse);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 600;
+}
+
+.content { padding: 0 var(--s4) var(--s8); }
+
+/* Reusable card */
+.card {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: var(--s4);
+  box-shadow: 0 1px 2px rgba(15,27,31,0.06);
+  margin-bottom: var(--s3);
+}
+.card-label {
+  font-size: 12px; font-weight: 600;
+  color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;
+  margin-bottom: var(--s2);
+}
+
+/* September total card */
+.total-card .amount {
+  font-family: var(--mono);
+  font-size: 32px; line-height: 40px; font-weight: 700;
+  letter-spacing: -0.5px;
+}
+.total-card .sub {
+  font-size: 13px; color: var(--text-muted);
+  margin-top: var(--s1);
+}
+.total-card .bar {
+  height: 6px; background: var(--surface-muted);
+  border-radius: var(--radius-pill); margin-top: var(--s3);
+  overflow: hidden;
+}
+.total-card .bar-fill {
+  height: 100%; border-radius: var(--radius-pill);
+  background: var(--accent);
+}
+
+/* Group balance row */
+.group-row {
+  display: flex; align-items: center; gap: var(--s3);
+  padding: var(--s3) 0;
+  border-bottom: 1px solid var(--border);
+}
+.group-row:last-child { border-bottom: 0; padding-bottom: 0; }
+.group-row:first-child { padding-top: 0; }
+.group-row .icon {
+  width: 40px; height: 40px;
+  background: var(--accent-soft);
+  border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+}
+.group-row .meta { flex: 1; min-width: 0; }
+.group-row .meta strong { display: block; font-size: 15px; font-weight: 600; }
+.group-row .meta span {
+  display: block; font-size: 12px; color: var(--text-muted);
+}
+.group-row .balance {
+  text-align: right; flex-shrink: 0;
+}
+.group-row .balance .amount {
+  font-family: var(--mono);
+  font-size: 15px; font-weight: 700;
+}
+.group-row .balance .label {
+  display: block; font-size: 11px; text-transform: uppercase;
+  letter-spacing: 0.5px; font-weight: 600;
+}
+.balance.owed .amount { color: var(--success); }
+.balance.owed .label { color: var(--success); }
+.balance.owes .amount { color: var(--danger); }
+.balance.owes .label { color: var(--danger); }
+
+/* Quick actions (NL entry primary CTA) */
+.qa {
+  display: flex; gap: var(--s2); margin-top: var(--s4);
+}
+.qa-btn {
+  flex: 1;
+  display: flex; flex-direction: column; align-items: flex-start;
+  gap: 4px;
+  padding: var(--s3);
+  background: var(--surface-muted);
+  border: 0; border-radius: var(--radius-md);
+  font-family: inherit; font-size: 13px; font-weight: 600;
+  text-align: left; cursor: pointer;
+}
+.qa-btn.primary {
+  background: var(--accent); color: var(--text-inverse);
+}
+.qa-btn .emoji { font-size: 18px; }
+
+/* AI insights teaser card */
+.insights {
+  background: linear-gradient(135deg, var(--accent) 0%, #2B9BB4 100%);
+  color: var(--text-inverse);
+  border-radius: var(--radius-lg);
+  padding: var(--s4);
+  margin-bottom: var(--s3);
+}
+.insights .badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: rgba(255,255,255,0.18);
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  margin-bottom: var(--s2);
+}
+.insights h3 {
+  margin: 0 0 var(--s2);
+  font-size: 16px; font-weight: 700;
+}
+.insights p {
+  margin: 0 0 var(--s3);
+  font-size: 14px; opacity: 0.92;
+}
+.insights button {
+  background: var(--surface); color: var(--accent);
+  border: 0; border-radius: var(--radius-md);
+  font-family: inherit; font-size: 14px; font-weight: 600;
+  padding: 10px 16px; cursor: pointer;
+}
+
+.section-title {
+  font-size: 13px; font-weight: 700;
+  color: var(--text); margin: var(--s5) 0 var(--s2);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.section-title a {
+  font-size: 12px; font-weight: 600; color: var(--accent);
+  text-decoration: none;
+}
+
+/* FAB */
+.fab {
+  position: absolute; bottom: 80px; right: 16px;
+  width: 56px; height: 56px;
+  background: var(--accent); color: var(--text-inverse);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; font-weight: 300;
+  border: 0; cursor: pointer;
+  box-shadow: 0 4px 8px rgba(15,27,31,0.16), 0 8px 16px rgba(15,27,31,0.12);
+}
+
+/* Tabbar (unchanged from v3) */
+.tabbar {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  height: 64px; background: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex;
+}
+.tab {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 2px;
+  font-size: 12px; color: var(--text-muted); position: relative;
+}
+.tab.active { color: var(--accent); font-weight: 600; }
+.tab.active::before {
+  content: ""; position: absolute; top: 0; left: 25%; right: 25%;
+  height: 3px; background: var(--accent);
+}
+.tab .icon { font-size: 20px; }
+.tab .badge { position: absolute; top: 8px; right: 30%; width: 8px; height: 8px; background: #C0392B; border-radius: 50%; }
+
+/* Make tabs behave as clickable links to the parent prototype shell. */
+.tab {
+  text-decoration: none;
+  cursor: pointer;
+}
+.tab:active { background: var(--surface-muted); }
+</style>
+<script>
+// Tabs send a postMessage to the parent prototype shell so its iframe swaps to the clicked screen.
+document.addEventListener("click", function (e) {
+  var t = e.target.closest(".tab[data-screen]");
+  if (!t) return;
+  e.preventDefault();
+  try {
+    window.parent.postMessage({ type: "pocketplan:navigate", file: t.getAttribute("data-screen") }, "*");
+  } catch (_) {}
+  // Fallback: navigate the parent if postMessage isn't wired.
+  setTimeout(function () {
+    try { window.top.location.href = t.getAttribute("href"); } catch (_) {}
+  }, 50);
+});
+</script>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar"><span>9:41</span><span>•••</span></div>
+  <div class="appbar">
+    <div>
+      <div class="greet">Good morning,</div>
+      <h1>Saqline</h1>
+    </div>
+    <div class="avatar">S</div>
+  </div>
+
+  <div class="content">
+    <!-- AI Insights teaser — primary entry point per Section 6.16 -->
+    <div class="insights">
+      <span class="badge">✨ AI insights</span>
+      <h3>Your September so far</h3>
+      <p>Food up 18% vs August. Shopping trending under budget. One unusual entry flagged — review now.</p>
+      <button>Open insights</button>
+    </div>
+
+    <!-- Personal total — same shape as v3 dashboard -->
+    <div class="card total-card">
+      <div class="card-label">Spent in September</div>
+      <div class="amount">৳14,280</div>
+      <div class="sub">of ৳35,000 planned · 41% used</div>
+      <div class="bar"><div class="bar-fill" style="width: 41%"></div></div>
+    </div>
+
+    <!-- Quick actions -->
+    <div class="qa">
+      <button class="qa-btn primary">
+        <span class="emoji">✍️</span>
+        Type an expense
+      </button>
+      <button class="qa-btn">
+        <span class="emoji">🧮</span>
+        Manual entry
+      </button>
+    </div>
+
+    <!-- Groups — new in v4 -->
+    <div class="section-title">
+      Your groups
+      <a href="mock-v4-02-groups-list.html">See all</a>
+    </div>
+    <div class="card">
+      <div class="group-row">
+        <div class="icon">🏠</div>
+        <div class="meta">
+          <strong>Mess — Bashundhara</strong>
+          <span>4 members · 12 expenses</span>
+        </div>
+        <div class="balance owed">
+          <div class="amount">৳1,240</div>
+          <div class="label">you are owed</div>
+        </div>
+      </div>
+      <div class="group-row">
+        <div class="icon">✈️</div>
+        <div class="meta">
+          <strong>Sajek Trip 2026</strong>
+          <span>6 members · 8 expenses</span>
+        </div>
+        <div class="balance owes">
+          <div class="amount">৳680</div>
+          <div class="label">you owe</div>
+        </div>
+      </div>
+      <div class="group-row">
+        <div class="icon">🎬</div>
+        <div class="meta">
+          <strong>Home Subscriptions</strong>
+          <span>3 members · monthly</span>
+        </div>
+        <div class="balance owes">
+          <div class="amount">৳150</div>
+          <div class="label">you owe</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent personal activity -->
+    <div class="section-title">
+      Recent activity
+      <a href="#">See all</a>
+    </div>
+    <div class="card" style="padding: 0;">
+      <div style="display:flex; align-items:center; gap:12px; padding: 12px 16px; border-bottom: 1px solid var(--border);">
+        <div style="width:32px;height:32px;background:var(--surface-muted);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;">🍔</div>
+        <div style="flex:1;">
+          <strong style="display:block;font-size:14px;">Lunch at canteen</strong>
+          <span style="font-size:12px;color:var(--text-muted);">Food · Cash · today</span>
+        </div>
+        <div style="font-family:var(--mono);font-weight:600;">৳120</div>
+      </div>
+      <div style="display:flex; align-items:center; gap:12px; padding: 12px 16px;">
+        <div style="width:32px;height:32px;background:var(--surface-muted);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;">🧾</div>
+        <div style="flex:1;">
+          <strong style="display:block;font-size:14px;">Wi-Fi — Sep</strong>
+          <span style="font-size:12px;color:var(--text-muted);">Bills · City Bank · yesterday · Mess group</span>
+        </div>
+        <div style="font-family:var(--mono);font-weight:600;">৳<span style="text-decoration:line-through;opacity:0.5;">1,200</span> <span style="color:var(--accent);">300</span></div>
+      </div>
+    </div>
+  </div>
+
+  <button class="fab">+</button>
+
+  <div class="tabbar">
+    <a class="tab active" data-screen=".working/mock-v4-01-home.html" href=".working/mock-v4-01-home.html"><div class="icon">⌂</div>Home</a>
+    <a class="tab" data-screen=".working/mock-v4-02-groups-list.html" href=".working/mock-v4-02-groups-list.html"><div class="icon">👥</div>Groups</a>
+    <a class="tab" data-screen=".working/mock-v4-04-add-expense-ai.html" href=".working/mock-v4-04-add-expense-ai.html"><div class="icon">＋</div>Add</a>
+    <a class="tab" data-screen=".working/mock-v4-05-insights.html" href=".working/mock-v4-05-insights.html"><div class="icon">▤</div>Reports</a>
+    <a class="tab" data-screen=".working/mock-v4-06-profile.html" href=".working/mock-v4-06-profile.html"><div class="icon">•••</div>More<span class="badge"></span></a>
+  </div>
+</div>
+</body>
+</html>

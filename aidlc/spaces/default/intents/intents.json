@@ -1,0 +1,16 @@
+[
+  {
+    "uuid": "01a1067c-b97e-77f7-8b13-91ace014475e",
+    "slug": "poc",
+    "dirName": "261004-poc",
+    "scope": "poc",
+    "status": "archived"
+  },
+  {
+    "uuid": "01a10683-843a-7ec2-90de-32db21685d1b",
+    "slug": "asset-registration",
+    "dirName": "261004-asset-registration",
+    "scope": "poc",
+    "status": "in-flight"
+  }
+]

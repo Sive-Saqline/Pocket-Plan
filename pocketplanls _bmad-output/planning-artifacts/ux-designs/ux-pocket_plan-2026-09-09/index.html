@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PocketPlan — v4 Prototype Hub</title>
+<style>
+:root {
+  --accent: #1F7A8C; --accent-soft: rgba(31,122,140,0.06);
+  --surface: #FFFFFF; --surface-muted: #F5F7F8;
+  --border: #E3E7E8;
+  --text: #0F1B1F; --text-muted: #5C6B70;
+  --radius-md: 8px; --radius-lg: 12px;
+  --s2: 8px; --s3: 12px; --s4: 16px; --s5: 20px; --s6: 24px; --s8: 32px;
+  --font: Inter, system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: var(--font); font-size: 16px; line-height: 24px;
+  color: var(--text); background: var(--surface-muted);
+  -webkit-font-smoothing: antialiased;
+}
+.shell { max-width: 1100px; margin: 0 auto; padding: var(--s8) var(--s5); }
+
+header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: var(--s6) var(--s5);
+}
+header .inner { max-width: 1100px; margin: 0 auto; }
+header h1 {
+  margin: 0 0 var(--s2);
+  font-size: 28px; font-weight: 700;
+  letter-spacing: -0.5px;
+}
+header .meta {
+  display: flex; gap: var(--s4); flex-wrap: wrap;
+  color: var(--text-muted); font-size: 14px;
+}
+header .meta strong { color: var(--text); font-weight: 600; }
+header .badge {
+  display: inline-block;
+  background: var(--accent); color: white;
+  padding: 2px 8px;
+  border-radius: var(--radius-md);
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  margin-right: var(--s2);
+}
+
+.flow {
+  margin: var(--s6) 0 var(--s3);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--s5);
+}
+.flow h2 { margin: 0 0 var(--s3); font-size: 16px; font-weight: 700; }
+.flow p { margin: 0 0 var(--s3); color: var(--text-muted); font-size: 14px; }
+.flow ol { margin: 0; padding-left: 20px; font-size: 14px; }
+.flow ol li { margin-bottom: 4px; }
+.flow ol li code {
+  font-family: var(--mono); font-size: 13px;
+  background: var(--surface-muted); padding: 1px 6px; border-radius: 4px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--s4);
+}
+
+.card {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.1s, box-shadow 0.1s;
+  display: flex; flex-direction: column;
+}
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(15,27,31,0.08);
+}
+
+.card .phone-mock {
+  height: 360px;
+  background: var(--surface-muted);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  padding: var(--s5);
+  position: relative;
+  overflow: hidden;
+}
+.card .phone-mock svg { max-height: 100%; }
+
+.card .info { padding: var(--s4); }
+.card .num {
+  display: inline-block;
+  background: var(--accent-soft); color: var(--accent);
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  text-align: center; line-height: 24px;
+  font-size: 12px; font-weight: 700;
+  margin-right: var(--s2);
+}
+.card h3 { margin: 0 0 4px; font-size: 16px; font-weight: 700; }
+.card .prd { font-size: 12px; color: var(--text-muted); font-family: var(--mono); }
+
+footer {
+  margin-top: var(--s8);
+  padding-top: var(--s5);
+  border-top: 1px solid var(--border);
+  text-align: center;
+  font-size: 13px; color: var(--text-muted);
+}
+footer a { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="inner">
+    <h1><span class="badge">v4</span> PocketPlan — Prototype Hub</h1>
+    <div class="meta">
+      <span>PRD: <strong>PocketPlan-PRD-v4.md</strong></span>
+      <span>Direction: <strong>Option D (collaborative + AI)</strong></span>
+      <span>Scope: <strong>Mobile PWA, 375px</strong></span>
+      <span>Currency: <strong>৳ BDT</strong></span>
+    </div>
+  </div>
+</header>
+
+<div class="shell">
+
+  <div class="flow">
+    <h2>End-to-end flow (per PRD §7)</h2>
+    <p>The interactive prototype below covers every screen: landing → sign-up → home → groups → add expense → insights → profile.</p>
+    <ol>
+      <li><strong>Launch the prototype</strong> — <a href="prototype.html" style="color:var(--accent);font-weight:600;">Open <code>prototype.html</code></a> to interact with the full app in one file.</li>
+      <li>Landing page — "I want to start" CTA leads to register</li>
+      <li>Home dashboard — personal total + groups summary + AI insights entry</li>
+      <li>Groups list — per-group net balance, member avatars, quick stats</li>
+      <li>Group detail — per-member balances + simplified settlement suggestions</li>
+      <li>Add expense — AI NL parsing, editable suggestion card, split scope</li>
+      <li>Insights — AI monthly summary, anomaly note, forecast, pattern-to-template prompt</li>
+      <li>Profile — accounts, categories, savings goal, AI toggles, sign out</li>
+    </ol>
+  </div>
+
+  <div class="grid">
+
+    <a class="card" href="mock-v4-01-home.html">
+      <div class="phone-mock">
+        <svg viewBox="0 0 220 320" width="180" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0" y="0" width="220" height="320" rx="22" fill="#F5F7F8" stroke="#E3E7E8"/>
+          <rect x="14" y="42" width="192" height="48" rx="10" fill="#1F7A8C"/>
+          <rect x="22" y="54" width="120" height="9" rx="2" fill="#FFFFFF" opacity="0.95"/>
+          <rect x="22" y="68" width="80" height="6" rx="2" fill="#FFFFFF" opacity="0.7"/>
+          <rect x="14" y="100" width="192" height="60" rx="10" fill="#FFFFFF"/>
+          <rect x="24" y="110" width="60" height="6" rx="2" fill="#5C6B70"/>
+          <rect x="24" y="122" width="100" height="14" rx="2" fill="#0F1B1F"/>
+          <rect x="24" y="142" width="80" height="6" rx="2" fill="#5C6B70"/>
+          <rect x="14" y="170" width="192" height="100" rx="10" fill="#FFFFFF"/>
+          <circle cx="36" cy="194" r="12" fill="#1F7A8C" opacity="0.15"/>
+          <rect x="56" y="188" width="80" height="6" rx="2" fill="#0F1B1F"/>
+          <rect x="56" y="198" width="60" height="5" rx="2" fill="#5C6B70"/>
+          <rect x="160" y="190" width="36" height="8" rx="2" fill="#2E8B57"/>
+          <circle cx="36" cy="226" r="12" fill="#1F7A8C" opacity="0.15"/>
+          <rect x="56" y="220" width="70" height="6" rx="2" fill="#0F1B1F"/>
+          <rect x="56" y="230" width="50" height="5" rx="2" fill="#5C6B70"/>
+          <rect x="160" y="222" width="36" height="8" rx="2" fill="#C0392B"/>
+          <rect x="0" y="290" width="220" height="30" fill="#FFFFFF" stroke="#E3E7E8"/>
+          <rect x="22" y="298" width="40" height="6" rx="2" fill="#1F7A8C"/>
+        </svg>
+      </div>
+      <div class="info">
+        <h3><span class="num">1</span>Home dashboard</h3>
+        <div class="prd">§6.1, §6.9, §6.10, §6.16</div>
+      </div>
+    </a>
+
+    <a class="card" href="mock-v4-02-groups-list.html">
+      <div class="phone-mock">
+        <svg viewBox="0 0 220 320" width="180" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0" y="0" width="220" height="320" rx="22" fill="#F5F7F8" stroke="#E3E7E8"/>
+          <rect x="0" y="22" width="220" height="28" fill="#F5F7F8" stroke="#E3E7E8"/>
+          <rect x="14" y="32" width="60" height="9" rx="2" fill="#0F1B1F"/>
+          <rect x="14" y="60" width="192" height="40" rx="10" fill="#FFFFFF"/>
+          <rect x="24" y="72" width="70" height="6" rx="2" fill="#5C6B70"/>
+          <rect x="24" y="84" width="50" height="9" rx="2" fill="#2E8B57"/>
+          <rect x="160" y="80" width="1" height="14" fill="#E3E7E8"/>
+          <rect x="170" y="72" width="36" height="6" rx="2" fill="#5C6B70"/>
+          <rect x="170" y="84" width="36" height="9" rx="2" fill="#C0392B"/>
+          <rect x="14" y="108" width="192" height="56" rx="10" fill="#FFFFFF"/>
+          <circle cx="36" cy="136" r="14" fill="#1F7A8C" opacity="0.15"/>
+          <rect x="58" y="124" width="80" height="7" rx="2" fill="#0F1B1F"/>
+          <rect x="58" y="136" width="60" height="5" rx="2" fill="#5C6B70"/>
+          <rect x="58" y="148" width="40" height="5" rx="2" fill="#5C6B70"/>
+          <rect x="160" y="130" width="40" height="14" rx="7" fill="#2E8B57" opacity="0.18"/>
+          <rect x="170" y="134" width="22" height="6" rx="2" fill="#2E8B57"/>
+          <rect x="14" y="172" width="192" height="56" rx="10" fill="#FFFFFF"/>
+          <circle cx="36" cy="200" r="14" fill="#1F7A8C" opacity="0.15"/>
+          <rect x="58" y="188" width="80" height="7" rx="2" fill="#0F1B1F"/>
+          <rect x="58" y="200" width="50" height="5" rx="2" fill="#5C6B70"/>
+          <rect x="160" y="194" width="40" height="14" rx="7" fill="#C0392B" opacity="0.18"/>
+          <rect x="170" y="198" width="22" height="6" rx="2" fill="#C0392B"/>
+          <rect x="14" y="236" width="192" height="56" rx="10" fill="#FFFFFF"/>
+          <rect x="0" y="290" width="220" height="30" fill="#FFFFFF" stroke="#E3E7E8"/>
+        </svg>
+      </div>
+      <div class="info">
+        <h3><span class="num">2</span>Groups list</h3>
+        <div class="prd">§6.10, §6.11</div>
+      </div>
+    </a>
+
+    <a class="card" href="mock-v4-03-group-detail.html">
+      <div class="phone-mock">
+        <svg viewBox="0 0 220 320" width="180" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0" y="0" width="220" height="320" rx="22" fill="#F5F7F8" stroke="#E3E7E8"/>
+          <rect x="14" y="22" width="192" height="56" rx="10" fill="#FFFFFF"/>
+          <circle cx="36" cy="50" r="14" fill="#1F7A8C" opacity="0.15"/>
+          <rect x="58" y="40" width="80" height="7" rx="2" fill="#0F1B1F"/>
+          <rect x="58" y="52" width="50" height="5" rx="2" fill="#5C6B70"/>
+          <rect x="14" y="88" width="192" height="100" rx="10" fill="#FFFFFF"/>
+          <rect x="22" y="100" width="80" height="6" rx="2" fill="#5C6B70"/>
+          <rect x="22" y="118" width="40" height="5" rx="2" fill="#0F1B1F"/>
+          <rect x="22" y="128" width="60" height="5" rx="2" fill="#5C6B70"/>
+          <rect x="160" y="120" width="40" height="8" rx="2" fill="#2E8B57"/>
+          <rect x="22" y="142" width="40" height="5" rx="2" fill="#0F1B1F"/>
+          <rect x="22" y="152" width="60" height="5" rx="2" fill="#5C6B70"/>
+          <rect x="160" y="144" width="40" height="8" rx="2" fill="#C0392B"/>
+          <rect x="22" y="166" width="40" height="5" rx="2" fill="#0F1B1F"/>
+          <rect x="22" y="176" width="60" height="5" rx="2" fill="#5C6B70"/>
+          <rect x="160" y="168" width="40" height="8" rx="2" fill="#C0392B"/>
+          <rect x="14" y="198" width="192" height="68" rx="10" fill="#FFFFFF"/>
+          <rect x="22" y="208" width="80" height="6" rx="2" fill="#5C6B70"/>
+          <rect x="22" y="226" width="36" height="14" rx="7" fill="#1F7A8C"/>
+          <rect x="170" y="228" width="20" height="10" rx="2" fill="#FFFFFF"/>
+          <rect x="0" y="290" width="220" height="30" fill="#FFFFFF" stroke="#E3E7E8"/>
+        </svg>
+      </div>
+      <div class="info">
+        <h3><span class="num">3</span>Group detail · balances &amp; settlements</h3>
+        <div class="prd">§6.12, §6.13, §9.1, §9.2, §9.3</div>
+      </div>
+    </a>
+
+    <a class="card" href="mock-v4-04-add-expense-ai.html">
+      <div class="phone-mock">
+        <svg viewBox="0 0 220 320" width="180" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0" y="0" width="220" height="320" rx="22" fill="rgba(15,27,31,0.5)"/>
+          <rect x="0" y="60" width="220" height="260" rx="14" fill="#FFFFFF"/>
+          <rect x="100" y="68" width="20" height="3" rx="1.5" fill="#E3E7E8"/>
+          <rect x="14" y="84" width="80" height="10" rx="2" fill="#0F1B1F"/>
+          <rect x="14" y="106" width="192" height="46" rx="6" fill="#FFFFFF" stroke="#E3E7E8"/>
+          <rect x="22" y="116" width="160" height="5" rx="2" fill="#5C6B70"/>
+          <rect x="22" y="126" width="120" height="5" rx="2" fill="#5C6B70"/>
+          <rect x="14" y="164" width="192" height="100" rx="8" fill="#1F7A8C" opacity="0.06" stroke="#1F7A8C"/>
+          <rect x="24" y="174" width="50" height="10" rx="5" fill="#1F7A8C"/>
+          <rect x="24" y="194" width="60" height="14" rx="2" fill="#0F1B1F"/>
+          <rect x="24" y="220" width="60" height="6" rx="2" fill="#5C6B70"/>
+          <rect x="24" y="230" width="80" height="14" rx="2" fill="#FFFFFF" stroke="#E3E7E8"/>
+          <rect x="24" y="252" width="100" height="6" rx="2" fill="#5C6B70"/>
+          <rect x="14" y="276" width="92" height="22" rx="6" fill="#F5F7F8"/>
+          <rect x="114" y="276" width="92" height="22" rx="6" fill="#1F7A8C"/>
+        </svg>
+      </div>
+      <div class="info">
+        <h3><span class="num">4</span>Add expense · AI NL parse</h3>
+        <div class="prd">§6.12, §6.14, §6.15, §6.17</div>
+      </div>
+    </a>
+
+    <a class="card" href="mock-v4-05-insights.html">
+      <div class="phone-mock">
+        <svg viewBox="0 0 220 320" width="180" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0" y="0" width="220" height="320" rx="22" fill="#F5F7F8" stroke="#E3E7E8"/>
+          <rect x="14" y="40" width="192" height="100" rx="10" fill="#1F7A8C"/>
+          <rect x="24" y="52" width="60" height="10" rx="5" fill="#FFFFFF" opacity="0.25"/>
+          <rect x="24" y="74" width="170" height="9" rx="2" fill="#FFFFFF"/>
+          <rect x="24" y="90" width="170" height="6" rx="2" fill="#FFFFFF" opacity="0.8"/>
+          <rect x="24" y="102" width="120" height="6" rx="2" fill="#FFFFFF" opacity="0.8"/>
+          <rect x="24" y="120" width="160" height="1" fill="#FFFFFF" opacity="0.3"/>
+          <rect x="14" y="148" width="192" height="64" rx="10" fill="#FFFFFF"/>
+          <rect x="24" y="158" width="80" height="6" rx="2" fill="#5C6B70"/>
+          <rect x="24" y="174" width="120" height="9" rx="2" fill="#0F1B1F"/>
+          <rect x="24" y="190" width="160" height="6" rx="2" fill="#5C6B70"/>
+          <rect x="14" y="220" width="192" height="64" rx="10" fill="#FFFFFF"/>
+          <rect x="24" y="230" width="80" height="6" rx="2" fill="#5C6B70"/>
+          <rect x="24" y="246" width="120" height="9" rx="2" fill="#0F1B1F"/>
+          <rect x="24" y="262" width="160" height="6" rx="2" fill="#5C6B70"/>
+          <rect x="0" y="290" width="220" height="30" fill="#FFFFFF" stroke="#E3E7E8"/>
+        </svg>
+      </div>
+      <div class="info">
+        <h3><span class="num">5</span>AI monthly insights</h3>
+        <div class="prd">§6.16, §6.17, §6.18, §11</div>
+      </div>
+    </a>
+
+    <a class="card" href="mock-v4-06-profile.html">
+      <div class="phone-mock">
+        <svg viewBox="0 0 220 320" width="180" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0" y="0" width="220" height="320" rx="22" fill="#F5F7F8" stroke="#E3E7E8"/>
+          <rect x="14" y="40" width="192" height="80" rx="10" fill="#FFFFFF"/>
+          <circle cx="110" cy="64" r="18" fill="#1F7A8C"/>
+          <rect x="92" y="86" width="36" height="9" rx="2" fill="#0F1B1F"/>
+          <rect x="86" y="100" width="48" height="5" rx="2" fill="#5C6B70"/>
+          <rect x="14" y="128" width="192" height="44" rx="10" fill="#FFFFFF"/>
+          <circle cx="36" cy="150" r="10" fill="#F5F7F8"/>
+          <rect x="56" y="142" width="80" height="6" rx="2" fill="#0F1B1F"/>
+          <rect x="56" y="152" width="60" height="5" rx="2" fill="#5C6B70"/>
+          <rect x="14" y="180" width="192" height="44" rx="10" fill="#FFFFFF"/>
+          <circle cx="36" cy="202" r="10" fill="#F5F7F8"/>
+          <rect x="56" y="194" width="80" height="6" rx="2" fill="#0F1B1F"/>
+          <rect x="56" y="204" width="60" height="5" rx="2" fill="#5C6B70"/>
+          <rect x="14" y="232" width="192" height="44" rx="10" fill="#FFFFFF"/>
+          <circle cx="36" cy="254" r="10" fill="#F5F7F8"/>
+          <rect x="56" y="246" width="80" height="6" rx="2" fill="#0F1B1F"/>
+          <rect x="56" y="256" width="60" height="5" rx="2" fill="#5C6B70"/>
+          <rect x="0" y="290" width="220" height="30" fill="#FFFFFF" stroke="#E3E7E8"/>
+        </svg>
+      </div>
+      <div class="info">
+        <h3><span class="num">6</span>Profile &amp; settings</h3>
+        <div class="prd">§6.2, §6.14–6.18</div>
+      </div>
+    </a>
+
+  </div>
+
+  <footer>
+    v3 mocks (Expenses list, Confirm recurring, Reports by category) are untouched in their
+    original folder: <a href="../ux-pocket_plan-2026-08-30/.working/">ux-pocket_plan-2026-08-30/.working/</a>
+  </footer>
+
+</div>
+
+</body>
+</html>

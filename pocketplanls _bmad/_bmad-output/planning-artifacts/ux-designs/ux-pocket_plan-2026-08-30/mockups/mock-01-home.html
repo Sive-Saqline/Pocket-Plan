@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PocketPlan — Home (dashboard) mock</title>
+<style>
+:root {
+  /* DESIGN.md tokens inlined */
+  --accent: #1F7A8C;
+  --warning: #E0A92A;
+  --danger: #C0392B;
+  --success: #2E8B57;
+  --surface: #FFFFFF;
+  --surface-muted: #F5F7F8;
+  --border: #E3E7E8;
+  --text: #0F1B1F;
+  --text-muted: #5C6B70;
+  --text-inverse: #FFFFFF;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-pill: 9999px;
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 20px; --s6: 24px; --s8: 32px;
+  --font: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 24px;
+  color: var(--text);
+  background: var(--surface-muted);
+  -webkit-font-smoothing: antialiased;
+}
+.phone {
+  width: 375px;
+  min-height: 812px;
+  margin: 24px auto;
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: 32px;
+  overflow: hidden;
+  position: relative;
+}
+.statusbar {
+  height: 44px;
+  background: var(--surface-muted);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.appbar {
+  height: 56px;
+  background: var(--surface-muted);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--s4);
+  border-bottom: 1px solid var(--border);
+}
+.appbar h1 { font-size: 20px; font-weight: 600; margin: 0; }
+.appbar .avatar {
+  width: 32px; height: 32px; border-radius: var(--radius-pill);
+  background: var(--accent); color: var(--text-inverse);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 600;
+}
+.content { padding: var(--s4); padding-bottom: 80px; }
+
+.banner {
+  display: flex;
+  gap: var(--s3);
+  align-items: center;
+  background: var(--surface);
+  border-left: 4px solid var(--warning);
+  border-radius: var(--radius-md);
+  padding: var(--s3) var(--s4);
+  margin-bottom: var(--s4);
+  box-shadow: 0 1px 2px rgba(15,27,31,0.06);
+}
+.banner-icon {
+  width: 32px; height: 32px;
+  background: var(--warning); color: var(--text);
+  border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; font-weight: 700;
+}
+.banner-text { flex: 1; font-size: 14px; line-height: 20px; }
+.banner-text strong { display: block; font-weight: 600; margin-bottom: 2px; }
+.banner-text span { color: var(--text-muted); }
+.banner-cta {
+  background: var(--accent); color: var(--text-inverse);
+  border: 0; border-radius: var(--radius-md);
+  padding: 8px 12px; font-weight: 600; font-size: 14px;
+  font-family: inherit; cursor: pointer;
+}
+
+.hero-card {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: var(--s5);
+  margin-bottom: var(--s4);
+  box-shadow: 0 1px 2px rgba(15,27,31,0.06), 0 1px 3px rgba(15,27,31,0.08);
+}
+.hero-card .label {
+  font-size: 14px; color: var(--text-muted);
+  margin-bottom: var(--s2);
+}
+.hero-card .amount {
+  font-family: var(--mono);
+  font-size: 32px; line-height: 40px; font-weight: 700;
+  color: var(--text);
+  margin-bottom: var(--s2);
+}
+.hero-card .sub {
+  font-size: 14px; color: var(--text-muted);
+}
+.hero-card .sub strong { color: var(--text); font-weight: 600; }
+
+.section-title {
+  font-size: 14px; font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.5px;
+  margin: var(--s6) 0 var(--s3);
+}
+
+.budget-card {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: var(--s4);
+  margin-bottom: var(--s3);
+  box-shadow: 0 1px 2px rgba(15,27,31,0.06);
+}
+.budget-card.warn .bar-fill { background: var(--warning); }
+.budget-card.danger .bar-fill { background: var(--danger); }
+.budget-row {
+  display: flex; align-items: center; gap: var(--s3);
+  margin-bottom: var(--s3);
+}
+.budget-icon {
+  width: 40px; height: 40px;
+  background: var(--surface-muted);
+  border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+}
+.budget-name { font-size: 16px; font-weight: 600; flex: 1; }
+.budget-amounts {
+  font-family: var(--mono);
+  font-size: 14px; color: var(--text-muted);
+  text-align: right;
+}
+.budget-amounts strong { color: var(--text); display: block; font-weight: 600; }
+.bar {
+  height: 8px;
+  background: var(--surface-muted);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+.bar-fill {
+  height: 100%; background: var(--accent); border-radius: var(--radius-pill);
+}
+
+.savings-card {
+  background: linear-gradient(135deg, var(--accent), #266F7F);
+  color: var(--text-inverse);
+  border-radius: var(--radius-lg);
+  padding: var(--s5);
+  margin-bottom: var(--s4);
+  box-shadow: 0 1px 2px rgba(15,27,31,0.06), 0 1px 3px rgba(15,27,31,0.08);
+}
+.savings-card .label { font-size: 14px; opacity: 0.85; margin-bottom: var(--s2); }
+.savings-card .amount {
+  font-family: var(--mono);
+  font-size: 32px; line-height: 40px; font-weight: 700;
+}
+.savings-card .sub { font-size: 14px; opacity: 0.85; margin-top: var(--s2); }
+.savings-card .bar { background: rgba(255,255,255,0.2); margin-top: var(--s3); }
+.savings-card .bar-fill { background: #FFFFFF; }
+
+.section-title.small {
+  margin-top: var(--s5);
+}
+.recent-row {
+  background: var(--surface);
+  padding: var(--s3) var(--s4);
+  display: flex; align-items: center; gap: var(--s3);
+  border-bottom: 1px solid var(--border);
+}
+.recent-row:first-of-type { border-top-left-radius: var(--radius-lg); border-top-right-radius: var(--radius-lg); }
+.recent-row:last-of-type { border-bottom-left-radius: var(--radius-lg); border-bottom-right-radius: var(--radius-lg); border-bottom: 0; }
+.recent-icon {
+  width: 32px; height: 32px;
+  background: var(--surface-muted);
+  border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+}
+.recent-text { flex: 1; min-width: 0; }
+.recent-text strong { display: block; font-size: 14px; font-weight: 600; }
+.recent-text span { display: block; font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.recent-amount {
+  font-family: var(--mono);
+  font-size: 16px; font-weight: 600;
+}
+
+.tabbar {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  height: 64px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: stretch;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+.tab {
+  flex: 1;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 2px;
+  font-size: 12px;
+  color: var(--text-muted);
+  position: relative;
+}
+.tab.active { color: var(--accent); font-weight: 600; }
+.tab.active::before {
+  content: ""; position: absolute; top: 0; left: 25%; right: 25%;
+  height: 3px; background: var(--accent); border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+}
+.tab .icon { font-size: 20px; line-height: 1; }
+.tab .badge {
+  position: absolute; top: 8px; right: 30%;
+  width: 8px; height: 8px;
+  background: var(--danger); border-radius: 50%;
+}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar"><span>9:41</span><span>•••</span></div>
+  <div class="appbar"><h1>Home</h1><div class="avatar">S</div></div>
+
+  <div class="content">
+    <!-- DueRecurringBanner (§4.6) -->
+    <div class="banner">
+      <div class="banner-icon">!</div>
+      <div class="banner-text">
+        <strong>1 recurring expense is due</strong>
+        <span>Internet bill — ৳1,200</span>
+      </div>
+      <button class="banner-cta">Review</button>
+    </div>
+
+    <!-- Hero card: this-month total (§2.3 / §4.8) -->
+    <div class="hero-card">
+      <div class="label">You spent this month</div>
+      <div class="amount">৳24,500</div>
+      <div class="sub">of <strong>৳35,000</strong> planned · 70% · 5 days left</div>
+    </div>
+
+    <div class="section-title">Budgets</div>
+
+    <!-- BudgetCard — Transport at 95% (warning) -->
+    <div class="budget-card warn">
+      <div class="budget-row">
+        <div class="budget-icon">🚗</div>
+        <div class="budget-name">Transport</div>
+        <div class="budget-amounts">
+          <strong>৳4,750</strong>
+          <span>of ৳5,000</span>
+        </div>
+      </div>
+      <div class="bar"><div class="bar-fill" style="width: 95%"></div></div>
+    </div>
+
+    <!-- BudgetCard — Food at 50% (normal) -->
+    <div class="budget-card">
+      <div class="budget-row">
+        <div class="budget-icon">🍔</div>
+        <div class="budget-name">Food</div>
+        <div class="budget-amounts">
+          <strong>৳6,000</strong>
+          <span>of ৳12,000</span>
+        </div>
+      </div>
+      <div class="bar"><div class="bar-fill" style="width: 50%"></div></div>
+    </div>
+
+    <!-- BudgetCard — Shopping over (danger) -->
+    <div class="budget-card danger">
+      <div class="budget-row">
+        <div class="budget-icon">🛍️</div>
+        <div class="budget-name">Shopping</div>
+        <div class="budget-amounts">
+          <strong>৳3,400</strong>
+          <span>of ৳3,000</span>
+        </div>
+      </div>
+      <div class="bar"><div class="bar-fill" style="width: 100%"></div></div>
+    </div>
+
+    <!-- SavingsGoalCard (§4.8) -->
+    <div class="savings-card">
+      <div class="label">Savings goal · August</div>
+      <div class="amount">৳3,200</div>
+      <div class="sub">of ৳5,000 · 64%</div>
+      <div class="bar"><div class="bar-fill" style="width: 64%"></div></div>
+    </div>
+
+    <div class="section-title small">Recent expenses</div>
+    <div>
+      <div class="recent-row">
+        <div class="recent-icon">🍔</div>
+        <div class="recent-text">
+          <strong>Food</strong>
+          <span>Lunch at canteen</span>
+        </div>
+        <div class="recent-amount">৳120</div>
+      </div>
+      <div class="recent-row">
+        <div class="recent-icon">🚗</div>
+        <div class="recent-text">
+          <strong>Transport</strong>
+          <span>Pathao to office</span>
+        </div>
+        <div class="recent-amount">৳180</div>
+      </div>
+      <div class="recent-row">
+        <div class="recent-icon">🧾</div>
+        <div class="recent-text">
+          <strong>Bills</strong>
+          <span>Internet — Aug</span>
+        </div>
+        <div class="recent-amount">৳1,200</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabbar">
+    <div class="tab active"><div class="icon">⌂</div>Home</div>
+    <div class="tab"><div class="icon">≡</div>Expenses</div>
+    <div class="tab"><div class="icon">◔</div>Budgets</div>
+    <div class="tab"><div class="icon">▤</div>Reports</div>
+    <div class="tab"><div class="icon">•••</div>More<span class="badge"></span></div>
+  </div>
+</div>
+</body>
+</html>

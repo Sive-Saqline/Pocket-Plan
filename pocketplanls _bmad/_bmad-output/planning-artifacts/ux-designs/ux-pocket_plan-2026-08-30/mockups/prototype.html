@@ -1,0 +1,1838 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>PocketPlan — Clickable Prototype</title>
+<style>
+/* ─── DESIGN.md tokens ──────────────────────────────────────────── */
+:root {
+  --accent: #1F7A8C;
+  --accent-hover: #266F7F;
+  --accent-pressed: #185965;
+  --warning: #E0A92A;
+  --danger: #C0392B;
+  --success: #2E8B57;
+  --surface: #FFFFFF;
+  --surface-muted: #F5F7F8;
+  --surface-elevated: #FFFFFF;
+  --border: #E3E7E8;
+  --text: #0F1B1F;
+  --text-muted: #5C6B70;
+  --text-inverse: #FFFFFF;
+  --overlay: rgba(15, 27, 31, 0.5);
+  --radius-sm: 4px; --radius-md: 8px; --radius-lg: 12px;
+  --radius-xl: 16px; --radius-pill: 9999px;
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 20px; --s6: 24px; --s8: 32px;
+  --font: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+  --shadow-card: 0 1px 2px rgba(15,27,31,0.06), 0 1px 3px rgba(15,27,31,0.08);
+  --shadow-raised: 0 4px 8px rgba(15,27,31,0.08), 0 8px 16px rgba(15,27,31,0.12);
+  --shadow-modal: 0 12px 24px rgba(15,27,31,0.16), 0 24px 48px rgba(15,27,31,0.20);
+  --appbar-h: 56px;
+  --tabbar-h: 64px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: var(--font); font-size: 16px; line-height: 24px;
+  color: var(--text); background: #ECEEF1;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; }
+
+/* ─── Frame (mobile container on desktop background) ─────────────── */
+.frame-wrap {
+  min-height: 100vh;
+  display: flex; align-items: flex-start; justify-content: center;
+  padding: 24px;
+}
+.phone {
+  width: 390px; min-height: 844px;
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: 36px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: var(--shadow-raised);
+  display: flex; flex-direction: column;
+}
+.statusbar {
+  height: 44px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px; font-size: 14px; font-weight: 600;
+  background: var(--surface-muted);
+  flex-shrink: 0;
+}
+.screen { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+
+/* ─── AppBar ──────────────────────────────────────────────────────── */
+.appbar {
+  height: var(--appbar-h); background: var(--surface-muted);
+  display: flex; align-items: center; gap: var(--s3);
+  padding: 0 var(--s4); border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.appbar h1 { font-size: 20px; font-weight: 600; margin: 0; }
+.appbar .back {
+  background: transparent; border: 0; cursor: pointer;
+  font-size: 22px; color: var(--accent); padding: var(--s2);
+  line-height: 1;
+}
+.appbar .action {
+  background: transparent; border: 0; cursor: pointer;
+  font-size: 14px; color: var(--accent); padding: var(--s2);
+  font-weight: 600;
+}
+.appbar .spacer { flex: 1; }
+.appbar .avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--accent); color: var(--text-inverse);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 600;
+}
+
+/* ─── TabBar ──────────────────────────────────────────────────────── */
+.tabbar {
+  height: var(--tabbar-h); background: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex; flex-shrink: 0;
+  position: sticky; bottom: 0;
+}
+.tab {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 2px;
+  font-size: 12px; color: var(--text-muted);
+  position: relative; cursor: pointer;
+  background: transparent; border: 0;
+}
+.tab.active { color: var(--accent); font-weight: 600; }
+.tab.active::before {
+  content: ""; position: absolute; top: 0; left: 25%; right: 25%;
+  height: 3px; background: var(--accent);
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+}
+.tab .icon { font-size: 20px; line-height: 1; }
+.tab .badge { position: absolute; top: 8px; right: 30%; width: 8px; height: 8px; background: var(--danger); border-radius: 50%; }
+
+/* ─── Content area ────────────────────────────────────────────────── */
+.content {
+  flex: 1; overflow-y: auto; min-height: 0;
+}
+.content.padded { padding: var(--s4); padding-bottom: var(--s8); }
+.content.no-pad-top { padding-top: 0; }
+
+/* ─── Cards ───────────────────────────────────────────────────────── */
+.card {
+  background: var(--surface); border-radius: var(--radius-lg);
+  padding: var(--s4); margin-bottom: var(--s3);
+  box-shadow: var(--shadow-card);
+}
+.card-row {
+  display: flex; align-items: center; gap: var(--s3);
+  margin-bottom: var(--s3);
+}
+.card-row.no-mb { margin-bottom: 0; }
+.card .label { font-size: 14px; color: var(--text-muted); margin-bottom: var(--s2); }
+.card .amount-hero {
+  font-family: var(--mono); font-size: 32px; line-height: 40px; font-weight: 700;
+  margin-bottom: var(--s2);
+}
+.card .sub { font-size: 14px; color: var(--text-muted); }
+.card .sub strong { color: var(--text); font-weight: 600; }
+
+/* ─── Banner ──────────────────────────────────────────────────────── */
+.banner {
+  display: flex; gap: var(--s3); align-items: center;
+  background: var(--surface); border-left: 4px solid var(--warning);
+  border-radius: var(--radius-md); padding: var(--s3) var(--s4);
+  margin-bottom: var(--s4); box-shadow: var(--shadow-card);
+  cursor: pointer;
+}
+.banner-icon {
+  width: 32px; height: 32px; flex-shrink: 0;
+  background: var(--warning); color: var(--text);
+  border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; font-weight: 700;
+}
+.banner-text { flex: 1; font-size: 14px; line-height: 20px; min-width: 0; }
+.banner-text strong { display: block; font-weight: 600; margin-bottom: 2px; }
+.banner-text span { color: var(--text-muted); }
+.banner-cta {
+  background: var(--accent); color: var(--text-inverse);
+  border: 0; border-radius: var(--radius-md);
+  padding: 8px 12px; font-weight: 600; font-size: 14px; cursor: pointer;
+  font-family: inherit;
+}
+
+/* ─── BudgetCard ───────────────────────────────────────────────────── */
+.budget-card { cursor: pointer; transition: transform .12s; }
+.budget-card:active { transform: scale(0.98); }
+.budget-card .icon {
+  width: 40px; height: 40px; flex-shrink: 0;
+  background: var(--surface-muted); border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center; font-size: 20px;
+}
+.budget-card .name { font-size: 16px; font-weight: 600; flex: 1; }
+.budget-card .amounts {
+  font-family: var(--mono); font-size: 14px; color: var(--text-muted);
+  text-align: right;
+}
+.budget-card .amounts strong { color: var(--text); display: block; font-weight: 600; }
+.bar {
+  height: 8px; background: var(--surface-muted);
+  border-radius: var(--radius-pill); overflow: hidden;
+}
+.bar-fill { height: 100%; background: var(--accent); border-radius: var(--radius-pill); transition: width .3s; }
+.bar.warn .bar-fill { background: var(--warning); }
+.bar.danger .bar-fill { background: var(--danger); }
+
+/* ─── Savings card ─────────────────────────────────────────────────── */
+.savings-card {
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  color: var(--text-inverse);
+  border-radius: var(--radius-lg); padding: var(--s5);
+  margin-bottom: var(--s4); box-shadow: var(--shadow-card);
+  cursor: pointer;
+}
+.savings-card .label { font-size: 14px; opacity: 0.85; margin-bottom: var(--s2); }
+.savings-card .amount {
+  font-family: var(--mono); font-size: 32px; line-height: 40px; font-weight: 700;
+}
+.savings-card .sub { font-size: 14px; opacity: 0.85; margin-top: var(--s2); }
+.savings-card .bar { background: rgba(255,255,255,0.2); margin-top: var(--s3); }
+.savings-card .bar-fill { background: #FFFFFF; }
+
+/* ─── Section title ────────────────────────────────────────────────── */
+.section-title {
+  font-size: 14px; font-weight: 600; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.5px;
+  margin: var(--s6) 0 var(--s3);
+}
+.section-title.small { margin-top: var(--s5); }
+
+/* ─── Lists ────────────────────────────────────────────────────────── */
+.list-card {
+  background: var(--surface); border-radius: var(--radius-lg);
+  overflow: hidden; box-shadow: var(--shadow-card);
+  margin-bottom: var(--s4);
+}
+.day-header {
+  font-size: 12px; font-weight: 600;
+  color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;
+  padding: var(--s3) var(--s4) var(--s2);
+  background: var(--surface-muted);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.day-header .total {
+  font-family: var(--mono); font-size: 12px; font-weight: 400;
+  text-transform: none; letter-spacing: 0;
+}
+.row {
+  height: 64px; padding: 0 var(--s4);
+  display: flex; align-items: center; gap: var(--s3);
+  border-bottom: 1px solid var(--border); cursor: pointer;
+}
+.row:last-child { border-bottom: 0; }
+.row:active { background: var(--surface-muted); }
+.row .icon {
+  width: 32px; height: 32px; flex-shrink: 0;
+  background: var(--surface-muted); border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center; font-size: 16px;
+}
+.row .text { flex: 1; min-width: 0; }
+.row .text strong { display: block; font-size: 14px; font-weight: 600; }
+.row .text span {
+  display: block; font-size: 12px; color: var(--text-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.row .amount { font-family: var(--mono); font-size: 16px; font-weight: 600; flex-shrink: 0; }
+.row .amount small { display: block; font-size: 11px; color: var(--text-muted); font-weight: 400; font-family: var(--font); }
+.row .chev { color: var(--text-muted); font-size: 20px; }
+
+/* ─── FAB ──────────────────────────────────────────────────────────── */
+.fab {
+  position: absolute; bottom: 80px; right: 16px;
+  width: 56px; height: 56px;
+  background: var(--accent); color: var(--text-inverse);
+  border-radius: 50%; border: 0; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; font-weight: 300;
+  box-shadow: var(--shadow-raised);
+  z-index: 5;
+}
+
+/* ─── Empty state ──────────────────────────────────────────────────── */
+.empty {
+  text-align: center; padding: var(--s8) var(--s4);
+  color: var(--text-muted);
+}
+.empty .illus {
+  width: 96px; height: 96px; margin: 0 auto var(--s4);
+  background: var(--surface); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 40px;
+  box-shadow: var(--shadow-card);
+}
+.empty h3 { color: var(--text); font-size: 18px; font-weight: 600; margin: 0 0 var(--s2); }
+.empty p { margin: 0 0 var(--s4); font-size: 14px; }
+
+/* ─── Buttons ──────────────────────────────────────────────────────── */
+.btn {
+  height: 52px; padding: 0 var(--s5); border-radius: var(--radius-md);
+  font-size: 16px; font-weight: 600; border: 0; cursor: pointer;
+  font-family: inherit;
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: var(--s2);
+}
+.btn-primary { background: var(--accent); color: var(--text-inverse); }
+.btn-primary:hover { background: var(--accent-pressed); }
+.btn-secondary { background: var(--surface-muted); color: var(--text); }
+.btn-danger { background: var(--danger); color: var(--text-inverse); }
+.btn-ghost { background: transparent; color: var(--accent); }
+.btn-block { width: 100%; }
+.btn-sm { height: 36px; font-size: 14px; padding: 0 var(--s4); }
+
+/* ─── Inputs ───────────────────────────────────────────────────────── */
+.field { margin-bottom: var(--s4); }
+.field-label {
+  font-size: 12px; font-weight: 600;
+  color: var(--text-muted); text-transform: uppercase;
+  letter-spacing: 0.5px; margin-bottom: var(--s2);
+}
+.input {
+  width: 100%; padding: 12px 14px;
+  border: 1px solid var(--border); border-radius: var(--radius-md);
+  font-size: 16px; font-family: inherit;
+  background: var(--surface); color: var(--text); outline: none;
+}
+.input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(31,122,140,0.15); }
+.input.error { border-color: var(--danger); }
+.field-error { font-size: 12px; color: var(--danger); margin-top: 4px; }
+textarea.input { resize: vertical; min-height: 80px; font-family: inherit; }
+
+/* ─── AmountInput ──────────────────────────────────────────────────── */
+.amount-input {
+  background: var(--surface-muted);
+  border: 1px solid var(--border); border-radius: var(--radius-md);
+  padding: var(--s4);
+  display: flex; align-items: baseline; gap: var(--s2);
+  margin-bottom: var(--s4);
+}
+.amount-input .currency { font-size: 24px; font-weight: 500; color: var(--text-muted); }
+.amount-input .value {
+  flex: 1; border: 0; background: transparent; outline: none;
+  font-family: var(--mono); font-size: 32px; line-height: 40px; font-weight: 700;
+  color: var(--text); padding: 0;
+}
+
+/* ─── Scrollers (category / account) ───────────────────────────────── */
+.scroller-wrap { margin-bottom: var(--s4); }
+.scroller {
+  display: flex; gap: var(--s3);
+  overflow-x: auto; scroll-snap-type: x mandatory;
+  padding: 0 var(--s4) var(--s3);
+  margin: 0 calc(var(--s4) * -1);
+}
+.scroller::-webkit-scrollbar { display: none; }
+.chip {
+  flex: 0 0 84px;
+  display: flex; flex-direction: column;
+  align-items: center; gap: var(--s2);
+  scroll-snap-align: center;
+  cursor: pointer; background: transparent; border: 0;
+  font-family: inherit;
+}
+.chip-icon {
+  width: 56px; height: 56px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  border: 2px solid transparent;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px;
+  transition: border-color .15s, transform .12s;
+}
+.chip.active .chip-icon { border-color: var(--accent); background: var(--surface); }
+.chip-label { font-size: 12px; color: var(--text); text-align: center; line-height: 16px; }
+.chip.active .chip-label { font-weight: 600; color: var(--accent); }
+
+/* account chips (pill style) */
+.pill-row { display: flex; gap: var(--s2); flex-wrap: wrap; margin-bottom: var(--s4); }
+.pill {
+  padding: 8px 14px; border: 1px solid var(--border);
+  border-radius: var(--radius-pill); background: var(--surface);
+  font-size: 14px; cursor: pointer; font-family: inherit;
+  color: var(--text);
+}
+.pill.active { border-color: var(--accent); color: var(--accent); background: rgba(31,122,140,0.06); font-weight: 600; }
+
+/* budget warning chip */
+.warning-chip {
+  display: inline-flex; align-items: center; gap: var(--s2);
+  background: rgba(224,169,42,0.14); color: #8B6914;
+  padding: 6px 12px; border-radius: var(--radius-pill);
+  font-size: 12px; font-weight: 600; margin-bottom: var(--s4);
+}
+.warning-chip .dot { width: 6px; height: 6px; background: var(--warning); border-radius: 50%; }
+
+/* ─── Sheet (bottom slide-up) ──────────────────────────────────────── */
+.scrim {
+  position: fixed; inset: 0;
+  background: var(--overlay); z-index: 100;
+  opacity: 0; pointer-events: none;
+  transition: opacity .2s ease;
+}
+.scrim.open { opacity: 1; pointer-events: auto; }
+.sheet {
+  position: fixed; left: 50%; bottom: 0;
+  transform: translate(-50%, 100%);
+  width: min(390px, 100vw);
+  max-height: 90vh; overflow-y: auto;
+  background: var(--surface);
+  border-top-left-radius: var(--radius-xl);
+  border-top-right-radius: var(--radius-xl);
+  box-shadow: 0 -8px 24px rgba(15,27,31,0.12);
+  padding: var(--s3) var(--s4) var(--s4);
+  z-index: 101;
+  transition: transform .25s cubic-bezier(.2,.9,.3,1.2);
+}
+.sheet.open { transform: translate(-50%, 0); }
+.sheet .handle {
+  width: 40px; height: 4px;
+  background: var(--border); border-radius: var(--radius-pill);
+  margin: 0 auto var(--s3);
+}
+.sheet-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: var(--s2);
+}
+.sheet-header h2 { font-size: 20px; font-weight: 600; margin: 0; }
+.sheet-header button {
+  background: transparent; border: 0; color: var(--text-muted);
+  font-size: 14px; cursor: pointer; padding: var(--s2); font-family: inherit;
+}
+.sheet-subtitle {
+  font-size: 14px; color: var(--text-muted);
+  margin-bottom: var(--s5);
+}
+
+/* ─── Modal (centered destructive confirm) ─────────────────────────── */
+.modal {
+  position: fixed; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 110;
+  opacity: 0; pointer-events: none; transition: opacity .18s;
+}
+.modal.open { opacity: 1; pointer-events: auto; }
+.modal-card {
+  background: var(--surface); border-radius: var(--radius-xl);
+  padding: var(--s6); width: min(360px, calc(100vw - 32px));
+  box-shadow: var(--shadow-modal);
+  transform: scale(0.96);
+  transition: transform .18s;
+}
+.modal.open .modal-card { transform: scale(1); }
+.modal-card h3 { margin: 0 0 var(--s3); font-size: 20px; font-weight: 600; }
+.modal-card p { margin: 0 0 var(--s5); color: var(--text-muted); font-size: 15px; }
+.modal-card .actions { display: flex; gap: var(--s3); }
+
+/* ─── Auth screens ─────────────────────────────────────────────────── */
+.auth-screen {
+  flex: 1; display: flex; flex-direction: column;
+  justify-content: center; padding: var(--s6) var(--s5);
+  background: var(--surface-muted);
+}
+.auth-screen h1 {
+  font-size: 28px; font-weight: 700; margin: 0 0 var(--s2);
+  color: var(--text);
+}
+.auth-screen .auth-sub {
+  font-size: 14px; color: var(--text-muted); margin: 0 0 var(--s6);
+}
+.auth-screen .auth-logo {
+  width: 56px; height: 56px; margin-bottom: var(--s5);
+  background: var(--accent); color: var(--text-inverse);
+  border-radius: var(--radius-lg);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 32px; font-weight: 700;
+}
+.auth-screen .auth-switch {
+  text-align: center; font-size: 14px; color: var(--text-muted);
+  margin-top: var(--s4);
+}
+.auth-screen .auth-switch a {
+  color: var(--accent); font-weight: 600; cursor: pointer;
+}
+
+/* ─── Onboarding ──────────────────────────────────────────────────── */
+.onb {
+  flex: 1; display: flex; flex-direction: column;
+  padding: var(--s5);
+  background: var(--surface-muted);
+}
+.onb-progress {
+  display: flex; gap: 6px; margin-bottom: var(--s6);
+}
+.onb-progress .dot {
+  flex: 1; height: 4px; border-radius: var(--radius-pill);
+  background: var(--border);
+}
+.onb-progress .dot.active { background: var(--accent); }
+.onb-content { flex: 1; }
+.onb-content h1 { font-size: 28px; font-weight: 700; margin: 0 0 var(--s3); }
+.onb-content p { font-size: 15px; color: var(--text-muted); margin: 0 0 var(--s5); line-height: 22px; }
+.onb-illus {
+  width: 100%; max-width: 240px; aspect-ratio: 1;
+  background: var(--surface); border-radius: var(--radius-xl);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 80px; margin: 0 auto var(--s6);
+  box-shadow: var(--shadow-card);
+}
+.onb-actions { display: flex; flex-direction: column; gap: var(--s3); }
+
+/* ─── Tabs (Reports) ───────────────────────────────────────────────── */
+.tabs {
+  display: flex; gap: var(--s2);
+  padding: var(--s4) var(--s4) var(--s2);
+  overflow-x: auto;
+}
+.tabs::-webkit-scrollbar { display: none; }
+.tab-pill {
+  flex: 0 0 auto; padding: 8px 14px;
+  border: 1px solid var(--border); border-radius: var(--radius-pill);
+  background: var(--surface); font-size: 14px; cursor: pointer;
+  font-family: inherit; color: var(--text);
+}
+.tab-pill.active {
+  border-color: var(--accent); color: var(--accent);
+  background: rgba(31,122,140,0.06); font-weight: 600;
+}
+
+/* ─── Reports cat row ─────────────────────────────────────────────── */
+.cat-row {
+  background: var(--surface); padding: var(--s3) var(--s4);
+  display: flex; align-items: center; gap: var(--s3);
+  border-bottom: 1px solid var(--border); cursor: pointer;
+}
+.cat-row:last-child { border-bottom: 0; }
+.cat-row .icon {
+  width: 40px; height: 40px; flex-shrink: 0;
+  background: var(--surface-muted); border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center; font-size: 20px;
+}
+.cat-row .text { flex: 1; min-width: 0; }
+.cat-row .text strong { display: block; font-size: 16px; font-weight: 600; }
+.cat-row .text .bar-wrap {
+  height: 6px; background: var(--surface-muted);
+  border-radius: var(--radius-pill); margin-top: 6px; overflow: hidden;
+}
+.cat-row .text .bar-fill { height: 100%; background: var(--accent); border-radius: var(--radius-pill); }
+.cat-row.warn .text .bar-fill { background: var(--warning); }
+.cat-row.danger .text .bar-fill { background: var(--danger); }
+.cat-row .amount {
+  font-family: var(--mono); font-size: 16px; font-weight: 600;
+  flex-shrink: 0; text-align: right;
+}
+.cat-row .amount small { display: block; font-size: 12px; color: var(--text-muted); font-weight: 400; font-family: var(--font); }
+
+/* ─── Settings list ───────────────────────────────────────────────── */
+.settings-list { background: var(--surface); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-card); }
+.settings-row {
+  padding: var(--s3) var(--s4); display: flex; align-items: center; gap: var(--s3);
+  border-bottom: 1px solid var(--border); cursor: pointer;
+}
+.settings-row:last-child { border-bottom: 0; }
+.settings-row .label { flex: 1; font-size: 16px; }
+.settings-row .chev { color: var(--text-muted); font-size: 18px; }
+.settings-row.danger .label { color: var(--danger); }
+
+/* ─── Toggle ──────────────────────────────────────────────────────── */
+.toggle { width: 44px; height: 26px; border-radius: var(--radius-pill); background: var(--border); position: relative; cursor: pointer; transition: background .15s; }
+.toggle::after {
+  content: ""; position: absolute; top: 3px; left: 3px;
+  width: 20px; height: 20px; background: var(--surface); border-radius: 50%;
+  box-shadow: var(--shadow-card);
+  transition: transform .15s;
+}
+.toggle.on { background: var(--accent); }
+.toggle.on::after { transform: translateX(18px); }
+
+/* ─── Confirm-recurring queue dots ────────────────────────────────── */
+.queue { display: flex; gap: 4px; justify-content: center; margin-bottom: var(--s4); }
+.queue .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.queue .dot.pending { background: var(--border); }
+
+/* ─── Banner (page-level error / banner-only) ─────────────────────── */
+.page-banner {
+  background: rgba(192,57,43,0.1); color: var(--danger);
+  border-left: 4px solid var(--danger);
+  border-radius: var(--radius-md); padding: var(--s3) var(--s4);
+  margin-bottom: var(--s4);
+  font-size: 14px;
+  display: flex; align-items: center; gap: var(--s2);
+}
+.page-banner button {
+  background: transparent; border: 0; color: var(--danger);
+  font-weight: 600; cursor: pointer; padding: 0; font-family: inherit;
+}
+
+/* ─── Toast ───────────────────────────────────────────────────────── */
+.toast {
+  position: fixed; top: var(--s4); left: 50%;
+  transform: translate(-50%, -120%);
+  background: var(--text); color: var(--text-inverse);
+  padding: var(--s3) var(--s4); border-radius: var(--radius-md);
+  font-size: 14px; font-weight: 500;
+  box-shadow: var(--shadow-modal);
+  z-index: 200;
+  transition: transform .25s;
+  pointer-events: none;
+}
+.toast.show { transform: translate(-50%, 0); }
+
+/* ─── Install card (PWA) ──────────────────────────────────────────── */
+.install-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: var(--s4);
+  display: flex; align-items: center; gap: var(--s3);
+  margin-bottom: var(--s4); box-shadow: var(--shadow-card);
+}
+.install-card .icon {
+  width: 40px; height: 40px;
+  background: rgba(31,122,140,0.1); color: var(--accent);
+  border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center; font-size: 22px;
+}
+.install-card .text { flex: 1; }
+.install-card .text strong { display: block; font-weight: 600; font-size: 14px; }
+.install-card .text span { font-size: 12px; color: var(--text-muted); }
+
+/* ─── Stack of picker buttons ─────────────────────────────────────── */
+.icon-pick { display: flex; gap: var(--s2); }
+.icon-pick .chip {
+  flex: 1; padding: var(--s3) var(--s2); border: 1px solid var(--border);
+  border-radius: var(--radius-md); background: var(--surface);
+  font-size: 12px; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  font-family: inherit; color: var(--text);
+}
+.icon-pick .chip.active {
+  border-color: var(--accent); background: rgba(31,122,140,0.06);
+  color: var(--accent); font-weight: 600;
+}
+.icon-pick .chip .emoji { font-size: 22px; }
+
+/* ─── read-only context row ───────────────────────────────────────── */
+.readonly-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 14px; background: var(--surface-muted);
+  border-radius: var(--radius-md);
+  font-size: 14px; color: var(--text-muted);
+  margin-bottom: var(--s3);
+}
+.readonly-row strong { color: var(--text); font-weight: 500; }
+
+/* ─── Info card (no icon) ────────────────────────────────────────── */
+.kv {
+  display: flex; justify-content: space-between;
+  padding: var(--s2) 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+.kv:last-child { border-bottom: 0; }
+.kv span:first-child { color: var(--text-muted); }
+.kv strong { font-weight: 600; }
+
+/* utility */
+.flex-row { display: flex; gap: var(--s3); }
+.flex-row > * { flex: 1; }
+.muted { color: var(--text-muted); }
+.center-text { text-align: center; }
+.mb-2 { margin-bottom: var(--s2); }
+.mb-3 { margin-bottom: var(--s3); }
+.mb-4 { margin-bottom: var(--s4); }
+
+/* ensure scrollable content fills */
+.screen { min-height: 0; }
+.content::-webkit-scrollbar { width: 4px; }
+.content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+<div class="frame-wrap">
+<div class="phone">
+  <div class="statusbar"><span id="clock">9:41</span><span>•••</span></div>
+  <div class="screen" id="screen"><!-- rendered here --></div>
+</div>
+</div>
+
+<div class="scrim" id="scrim" onclick="closeSheet()"></div>
+<div class="sheet" id="sheet"></div>
+<div class="modal" id="modal">
+  <div class="modal-card" id="modalCard"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ─── App state ──────────────────────────────────────────────────── */
+const state = {
+  route: '#/welcome',
+  signedIn: false,
+  emailConfirmed: true,
+  onboardingStep: 0,
+  activeTab: 'home',
+  sheet: null,
+  sheetData: null,
+  modal: null,
+  darkMode: false,
+  haptics: true,
+  pushEnabled: false,
+  newExpenseCategory: 'Food',
+  newExpenseAccount: 'Cash',
+  recurringQueue: [{ id: 'r1', desc: 'Internet', amount: 1200, account: 'City Bank', category: 'Bills' }],
+  recurringIndex: 0,
+  expenses: [
+    { id:'e1', date:'today', cat:'Food', icon:'🍔', desc:'Lunch at canteen', amount:120 },
+    { id:'e2', date:'today', cat:'Transport', icon:'🚗', desc:'Bus home', amount:40 },
+    { id:'e3', date:'today', cat:'Shopping', icon:'🛍️', desc:'Notebook', amount:140 },
+    { id:'e4', date:'yesterday', cat:'Bills', icon:'🧾', desc:'Internet — Aug', amount:1200 },
+    { id:'e5', date:'yesterday', cat:'Food', icon:'🍔', desc:'Dinner with friends', amount:220 },
+    { id:'e6', date:'2026-08-27', cat:'Transport', icon:'🚗', desc:'Pathao to Gulshan', amount:85 },
+    { id:'e7', date:'2026-08-25', cat:'Shopping', icon:'🛍️', desc:'Weekly shop at Agora', amount:3200 },
+    { id:'e8', date:'2026-08-25', cat:'Health', icon:'⚕️', desc:'Pharmacy', amount:340 },
+  ],
+  accounts: [
+    { id:'a1', name:'Cash', type:'Cash', balance:2400 },
+    { id:'a2', name:'City Bank', type:'Bank', balance:18500 },
+    { id:'a3', name:'bKash', type:'Mobile Wallet', balance:3200 },
+  ],
+  categories: [
+    { id:'c1', name:'Bills', icon:'🧾' },
+    { id:'c2', name:'Education', icon:'🎒' },
+    { id:'c3', name:'Entertainment', icon:'🎬' },
+    { id:'c4', name:'Food', icon:'🍔' },
+    { id:'c5', name:'Health', icon:'⚕️' },
+    { id:'c6', name:'Miscellaneous', icon:'📦' },
+    { id:'c7', name:'Savings', icon:'💰' },
+    { id:'c8', name:'Shopping', icon:'🛍️' },
+    { id:'c9', name:'Transport', icon:'🚗' },
+  ],
+  budgets: [
+    { id:'b1', cat:'Transport', planned: 5000, spent: 4750 },
+    { id:'b2', cat:'Food', planned: 12000, spent: 6000 },
+    { id:'b3', cat:'Shopping', planned: 3000, spent: 3400 },
+    { id:'b4', cat:'Bills', planned: 5000, spent: 4000 },
+    { id:'b5', cat:'Health', planned: 2000, spent: 800 },
+  ],
+  savings: { month:'August', target: 5000, saved: 3200 },
+  recurring: [
+    { id:'r1', name:'Internet bill', amount:1200, category:'Bills', account:'City Bank', freq:'Monthly', next:'30 Aug 2026', active:true },
+    { id:'r2', name:'Netflix', amount:300, category:'Entertainment', account:'City Bank', freq:'Monthly', next:'15 Sep 2026', active:true },
+    { id:'r3', name:'Gym', amount:1500, category:'Health', account:'Cash', freq:'Monthly', next:'5 Sep 2026', active:false },
+  ],
+  selectedExpenseId: null,
+  selectedAccountId: 'a1',
+  pwaInstalled: false,
+  pwaDismissed: false,
+};
+
+/* ─── Demo data ───────────────────────────────────────────────────── */
+const fmt = (n) => {
+  const s = (Math.round(n * 100) / 100).toFixed(2);
+  const [whole, dec] = s.split('.');
+  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return `৳${grouped}${dec === '00' ? '' : '.' + dec}`;
+};
+const dateLabel = (d) => {
+  if (d === 'today') return 'Today';
+  if (d === 'yesterday') return 'Yesterday';
+  const dt = new Date(d);
+  return dt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+};
+const categoryByName = (n) => state.categories.find(c => c.name === n);
+
+/* ─── Router ──────────────────────────────────────────────────────── */
+function navigate(route) {
+  state.route = route;
+  location.hash = route;
+  render();
+}
+window.addEventListener('hashchange', () => {
+  if (location.hash !== state.route) {
+    state.route = location.hash || '#/welcome';
+    render();
+  }
+});
+
+/* ─── Sheet / Modal / Toast ────────────────────────────────────────── */
+function openSheet(name, data = {}) {
+  state.sheet = name; state.sheetData = data;
+  renderSheet();
+  document.getElementById('scrim').classList.add('open');
+  document.getElementById('sheet').classList.add('open');
+}
+function closeSheet() {
+  document.getElementById('scrim').classList.remove('open');
+  document.getElementById('sheet').classList.remove('open');
+  setTimeout(() => { state.sheet = null; state.sheetData = null; renderSheet(); }, 220);
+}
+function openModal(html) {
+  document.getElementById('modalCard').innerHTML = html;
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* ─── Render: shell (appbar + content + tabbar) ────────────────────── */
+function shell({ title, back, action, tabbar = true, showAvatar = false, content }) {
+  return `
+    ${back || showAvatar ? `<div class="appbar">
+      ${back ? `<button class="back" onclick="navigate('${back}')">‹</button>` : ''}
+      <h1>${title}</h1>
+      <div class="spacer"></div>
+      ${action ? `<button class="action" onclick="${action.click}">${action.label}</button>` : ''}
+      ${showAvatar ? `<div class="avatar">S</div>` : ''}
+    </div>` : ''}
+    <div class="content padded">${content}</div>
+    ${tabbar ? tabbarEl() : ''}
+  `;
+}
+
+function tabbarEl() {
+  const tabs = [
+    { id: 'home', label: 'Home', icon: '⌂', route: '#/home' },
+    { id: 'expenses', label: 'Expenses', icon: '≡', route: '#/expenses' },
+    { id: 'budgets', label: 'Budgets', icon: '◔', route: '#/budgets' },
+    { id: 'reports', label: 'Reports', icon: '▤', route: '#/reports' },
+    { id: 'more', label: 'More', icon: '•••', route: '#/more' },
+  ];
+  const showBadge = state.recurring.some(r => r.active && new Date(r.next) <= new Date('2026-08-30'));
+  return `<div class="tabbar">${tabs.map(t => `
+    <button class="tab ${state.activeTab === t.id ? 'active' : ''}" onclick="goTab('${t.id}','${t.route}')">
+      <div class="icon">${t.icon}</div>${t.label}
+      ${t.id === 'more' && showBadge ? '<div class="badge"></div>' : ''}
+    </button>
+  `).join('')}</div>`;
+}
+
+function goTab(id, route) {
+  state.activeTab = id;
+  navigate(route);
+}
+
+/* ─── Render: full screen ──────────────────────────────────────────── */
+function render() {
+  const r = state.route;
+  let html = '';
+  if (r === '#/welcome' || !state.signedIn && (r.startsWith('#/auth'))) html = renderAuth(r);
+  else if (r === '#/auth/sign-in') html = renderSignIn();
+  else if (r === '#/auth/sign-up') html = renderSignUp();
+  else if (r === '#/auth/forgot') html = renderForgot();
+  else if (r === '#/auth/reset') html = renderSetNewPassword();
+  else if (r === '#/onboarding') html = renderOnboarding();
+  else if (r === '#/home') { state.activeTab='home'; html = renderHome(); }
+  else if (r === '#/expenses') { state.activeTab='expenses'; html = renderExpenses(); }
+  else if (r === '#/budgets') { state.activeTab='budgets'; html = renderBudgets(); }
+  else if (r === '#/reports') { state.activeTab='reports'; html = renderReports(); }
+  else if (r === '#/more') { state.activeTab='more'; html = renderMore(); }
+  else if (r === '#/accounts') html = renderAccounts();
+  else if (r === '#/categories') html = renderCategories();
+  else if (r === '#/recurring') html = renderRecurring();
+  else if (r === '#/savings') html = renderSavings();
+  else if (r === '#/settings') html = renderSettings();
+  else if (r === '#/reports/category') html = renderReportCategory();
+  else if (r === '#/reports/account') html = renderReportAccount();
+  else if (r === '#/reports/trend') html = renderReportTrend();
+  else if (r === '#/reports/savings') html = renderReportSavings();
+  else html = renderHome();
+  document.getElementById('screen').innerHTML = html;
+  renderSheet();
+}
+
+/* ─── Auth screens ────────────────────────────────────────────────── */
+function renderAuth(r) { return renderSignIn(); }
+function renderSignIn() {
+  return `
+  <div class="auth-screen">
+    <div class="auth-logo">৳</div>
+    <h1>Welcome back</h1>
+    <p class="auth-sub">Sign in to keep tracking your spending.</p>
+    <div class="field">
+      <div class="field-label">Email</div>
+      <input class="input" type="email" value="saqline@example.com" />
+    </div>
+    <div class="field">
+      <div class="field-label">Password</div>
+      <input class="input" type="password" value="••••••••" />
+    </div>
+    <button class="btn btn-primary btn-block" onclick="signIn()">Sign in</button>
+    <div style="text-align:right; margin-top: var(--s3);">
+      <a style="color: var(--accent); font-size: 14px; cursor: pointer;" onclick="navigate('#/auth/forgot')">Forgot password?</a>
+    </div>
+    <div class="auth-switch">
+      New here? <a onclick="navigate('#/auth/sign-up')">Create an account</a>
+    </div>
+  </div>`;
+}
+function renderSignUp() {
+  return `
+  <div class="auth-screen">
+    <div class="auth-logo">৳</div>
+    <h1>Create your account</h1>
+    <p class="auth-sub">Start tracking your spending in 2 minutes.</p>
+    <div class="field">
+      <div class="field-label">Name</div>
+      <input class="input" value="" placeholder="Your name" />
+    </div>
+    <div class="field">
+      <div class="field-label">Email</div>
+      <input class="input" type="email" placeholder="you@example.com" />
+    </div>
+    <div class="field">
+      <div class="field-label">Password</div>
+      <input class="input" type="password" placeholder="At least 8 characters" />
+    </div>
+    <button class="btn btn-primary btn-block" onclick="signUp()">Create account</button>
+    <div class="auth-switch">
+      Already have an account? <a onclick="navigate('#/auth/sign-in')">Sign in</a>
+    </div>
+  </div>`;
+}
+function renderForgot() {
+  return `
+  <div class="auth-screen">
+    <div class="auth-logo">৳</div>
+    <h1>Forgot password</h1>
+    <p class="auth-sub">Enter your email and we'll send you a reset link.</p>
+    <div class="field">
+      <div class="field-label">Email</div>
+      <input class="input" type="email" value="saqline@example.com" />
+    </div>
+    <button class="btn btn-primary btn-block" onclick="toast('Reset email sent.'); setTimeout(()=>navigate('#/auth/reset'), 600);">Send reset link</button>
+    <div class="auth-switch">
+      <a onclick="navigate('#/auth/sign-in')">‹ Back to sign in</a>
+    </div>
+  </div>`;
+}
+function renderSetNewPassword() {
+  return `
+  <div class="auth-screen">
+    <div class="auth-logo">৳</div>
+    <h1>Set new password</h1>
+    <p class="auth-sub">Choose a new password for your account.</p>
+    <div class="field">
+      <div class="field-label">New password</div>
+      <input class="input" type="password" placeholder="At least 8 characters" />
+    </div>
+    <div class="field">
+      <div class="field-label">Confirm password</div>
+      <input class="input" type="password" />
+    </div>
+    <button class="btn btn-primary btn-block" onclick="toast('Password updated.'); setTimeout(()=>signIn(), 600);">Save & sign in</button>
+  </div>`;
+}
+
+function signIn() { state.signedIn = true; navigate('#/home'); }
+function signUp() {
+  state.signedIn = true; state.emailConfirmed = false;
+  navigate('#/onboarding');
+}
+
+/* ─── Onboarding ──────────────────────────────────────────────────── */
+function renderOnboarding() {
+  const step = state.onboardingStep;
+  const steps = [
+    { title: 'Track your spending in 2 minutes.', body: "We'll help you set up the basics. You can change anything later.", illus: '📊' },
+    { title: 'Where does your money live?', body: "Add your first account — like Cash or a bank account. You can add more later.", illus: '💳', form: 'account' },
+    { title: 'Set a budget for your biggest category.', body: "We'll compare what you planned to what you actually spent each month.", illus: '📈', form: 'budget' },
+    { title: 'Add your first expense.', body: "Try it now: enter an amount, pick a category, and you're done.", illus: '✅', form: 'expense' },
+  ];
+  const s = steps[step];
+  let formHtml = '';
+  if (s.form === 'account') {
+    formHtml = `
+      <div class="field"><div class="field-label">Account name</div><input class="input" value="Cash" /></div>
+      <div class="field"><div class="field-label">Starting balance</div>
+        <div class="amount-input"><span class="currency">৳</span><input class="value" placeholder="0" value="2400" /></div>
+      </div>`;
+  } else if (s.form === 'budget') {
+    formHtml = `
+      <div class="field"><div class="field-label">Category</div>
+        <div class="pill-row">
+          <div class="pill active">Food</div><div class="pill">Transport</div><div class="pill">Bills</div><div class="pill">Shopping</div>
+        </div>
+      </div>
+      <div class="field"><div class="field-label">Monthly budget</div>
+        <div class="amount-input"><span class="currency">৳</span><input class="value" value="6000" /></div>
+      </div>`;
+  } else if (s.form === 'expense') {
+    formHtml = `
+      <div class="field"><div class="field-label">Amount</div>
+        <div class="amount-input"><span class="currency">৳</span><input class="value" placeholder="0" value="120" /></div>
+      </div>
+      <div class="field-label">Category</div>
+      <div class="scroller-wrap">
+        <div class="scroller">${state.categories.map(c => `
+          <button class="chip ${c.name === 'Food' ? 'active' : ''}" onclick="selectCategory('${c.name}')">
+            <div class="chip-icon">${c.icon}</div><div class="chip-label">${c.name}</div>
+          </button>`).join('')}</div>
+      </div>
+      <div class="field"><div class="field-label">Description</div>
+        <input class="input" value="Lunch at canteen" />
+      </div>`;
+  }
+  return `
+  <div class="onb">
+    <div class="onb-progress">${steps.map((_, i) => `<div class="dot ${i <= step ? 'active' : ''}"></div>`).join('')}</div>
+    <div class="onb-illus">${s.illus}</div>
+    <div class="onb-content">
+      <h1>${s.title}</h1>
+      <p>${s.body}</p>
+      ${formHtml}
+    </div>
+    <div class="onb-actions">
+      <button class="btn btn-primary btn-block" onclick="onbNext()">${step < 3 ? 'Next' : "I'm done — open PocketPlan"}</button>
+      ${step === 0 ? `<button class="btn btn-ghost btn-block" onclick="finishOnboarding()">Skip setup</button>` : ''}
+    </div>
+  </div>`;
+}
+function selectCategory(name) { state.newExpenseCategory = name; render(); }
+function onbNext() {
+  if (state.onboardingStep < 3) state.onboardingStep++;
+  else finishOnboarding();
+  render();
+}
+function finishOnboarding() {
+  state.onboardingStep = 0;
+  state.pwaDismissed = false;
+  navigate('#/home');
+}
+
+/* ─── Home ─────────────────────────────────────────────────────────── */
+function renderHome() {
+  const dueTemplates = state.recurring.filter(r => r.active);
+  const showBadge = dueTemplates.length > 0;
+  const totalSpent = state.budgets.reduce((s, b) => s + b.spent, 0);
+  const totalPlanned = state.budgets.reduce((s, b) => s + b.planned, 0);
+  const pct = Math.round((totalSpent / totalPlanned) * 100);
+  return `
+  <div class="appbar">
+    <h1>Home</h1>
+    <div class="spacer"></div>
+    <div class="avatar" onclick="navigate('#/settings')">S</div>
+  </div>
+  <div class="content padded">
+    ${showBadge ? `
+      <div class="banner" onclick="openConfirmRecurring()">
+        <div class="banner-icon">!</div>
+        <div class="banner-text">
+          <strong>${dueTemplates.length} recurring expense${dueTemplates.length > 1 ? 's' : ''} due</strong>
+          <span>${dueTemplates[0].name} — ${fmt(dueTemplates[0].amount)}</span>
+        </div>
+        <button class="banner-cta">Review</button>
+      </div>
+    ` : ''}
+
+    <div class="card">
+      <div class="label">You spent this month</div>
+      <div class="amount-hero">${fmt(totalSpent)}</div>
+      <div class="sub">of <strong>${fmt(totalPlanned)}</strong> planned · ${pct}% · 5 days left</div>
+    </div>
+
+    <div class="section-title">Budgets</div>
+    ${state.budgets.map(b => budgetCard(b)).join('')}
+
+    <div class="savings-card" onclick="navigate('#/reports/savings')">
+      <div class="label">Savings goal · ${state.savings.month}</div>
+      <div class="amount">${fmt(state.savings.saved)}</div>
+      <div class="sub">of ${fmt(state.savings.target)} · ${Math.round(state.savings.saved/state.savings.target*100)}%</div>
+      <div class="bar"><div class="bar-fill" style="width:${(state.savings.saved/state.savings.target*100)}%"></div></div>
+    </div>
+
+    <div class="section-title small">Recent expenses</div>
+    <div class="list-card">
+      ${state.expenses.slice(0, 3).map(e => expenseRow(e, '#/expenses')).join('')}
+    </div>
+
+    ${!state.pwaInstalled && !state.pwaDismissed && state.expenses.length > 0 ? `
+      <div class="install-card">
+        <div class="icon">⬇</div>
+        <div class="text">
+          <strong>Install PocketPlan</strong>
+          <span>Add to your home screen for one-tap access</span>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="installPWA()">Install</button>
+        <button class="btn btn-ghost btn-sm" onclick="state.pwaDismissed=true; render();">Not now</button>
+      </div>
+    ` : ''}
+  </div>
+  ${tabbarEl()}`;
+}
+
+function budgetCard(b) {
+  const c = categoryByName(b.cat);
+  const pct = Math.round(b.spent / b.planned * 100);
+  const cls = pct >= 100 ? 'danger' : pct >= 80 ? 'warn' : '';
+  return `
+    <div class="card budget-card" onclick="openReportCategory('${b.cat}')">
+      <div class="card-row">
+        <div class="icon">${c ? c.icon : '📦'}</div>
+        <div class="name">${b.cat}</div>
+        <div class="amounts"><strong>${fmt(b.spent)}</strong><span>of ${fmt(b.planned)}</span></div>
+      </div>
+      <div class="bar ${cls}"><div class="bar-fill" style="width:${Math.min(pct, 100)}%"></div></div>
+    </div>`;
+}
+
+/* ─── Expenses list ───────────────────────────────────────────────── */
+function renderExpenses() {
+  const grouped = {};
+  state.expenses.forEach(e => {
+    if (!grouped[e.date]) grouped[e.date] = [];
+    grouped[e.date].push(e);
+  });
+  const dayOrder = ['today', 'yesterday'];
+  const otherDates = Object.keys(grouped).filter(d => !dayOrder.includes(d)).sort((a,b) => new Date(b) - new Date(a));
+  const allDates = [...dayOrder.filter(d => grouped[d]), ...otherDates];
+  return `
+  <div class="appbar">
+    <h1>Expenses</h1>
+    <div class="spacer"></div>
+    <button class="action" onclick="openFilter()">Filter</button>
+  </div>
+  <div class="content no-pad-top">
+    ${state.expenses.length === 0 ? `
+      <div class="empty">
+        <div class="illus">🧾</div>
+        <h3>No expenses yet</h3>
+        <p>Tap the + button to add your first one.</p>
+        <button class="btn btn-primary" onclick="openAddExpense()">Add expense</button>
+      </div>
+    ` : `
+      ${allDates.map(d => `
+        <div class="day-header">${dateLabel(d)}<span class="total">${fmt(grouped[d].reduce((s,e) => s + e.amount, 0))}</span></div>
+        <div class="list-card">${grouped[d].map(e => expenseRow(e, '#/expenses')).join('')}</div>
+      `).join('')}
+    `}
+  </div>
+  <button class="fab" onclick="openAddExpense()">+</button>
+  ${tabbarEl()}`;
+}
+
+function expenseRow(e, backRoute) {
+  const c = categoryByName(e.cat);
+  return `
+    <div class="row" onclick="openEditExpense('${e.id}')">
+      <div class="icon">${c ? c.icon : '📦'}</div>
+      <div class="text"><strong>${e.cat}</strong><span>${e.desc}</span></div>
+      <div class="amount">${fmt(e.amount)}</div>
+    </div>`;
+}
+
+function openEditExpense(id) {
+  const e = state.expenses.find(x => x.id === id);
+  if (!e) return;
+  openSheet('edit-expense', e);
+}
+
+function openAddExpense() {
+  // Reset the picker state for a fresh add
+  state.newExpenseCategory = 'Food';
+  state.newExpenseAccount = 'Cash';
+  openSheet('add-expense');
+}
+
+const filterState = { categories: new Set(), accounts: new Set(), dateRange: 'all' };
+function openFilter() { openSheet('filter'); }
+
+/* ─── Budgets ─────────────────────────────────────────────────────── */
+function renderBudgets() {
+  const totalSpent = state.budgets.reduce((s, b) => s + b.spent, 0);
+  const totalPlanned = state.budgets.reduce((s, b) => s + b.planned, 0);
+  return `
+  <div class="appbar">
+    <h1>Budgets · August</h1>
+    <div class="spacer"></div>
+    <button class="action" onclick="openSheet('add-budget')">+ Add</button>
+  </div>
+  <div class="content padded">
+    <div class="card">
+      <div class="label">Total budgeted this month</div>
+      <div class="amount-hero">${fmt(totalPlanned)}</div>
+      <div class="sub">${fmt(totalSpent)} spent · ${Math.round(totalSpent/totalPlanned*100)}% used</div>
+    </div>
+    <div class="section-title">By category</div>
+    ${state.budgets.map(b => budgetCard(b)).join('')}
+    ${state.categories.filter(c => !state.budgets.find(b => b.cat === c.name)).length > 0 ? `
+      <div class="section-title small">Not budgeted</div>
+      <div class="list-card">
+        ${state.categories.filter(c => !state.budgets.find(b => b.cat === c.name)).map(c => `
+          <div class="row" onclick="openSheet('add-budget', { cat: '${c.name}' })">
+            <div class="icon">${c.icon}</div>
+            <div class="text"><strong>${c.name}</strong><span>Tap to set a budget</span></div>
+            <div class="chev">›</div>
+          </div>
+        `).join('')}
+      </div>
+    ` : ''}
+  </div>
+  ${tabbarEl()}`;
+}
+
+/* ─── Reports ─────────────────────────────────────────────────────── */
+function renderReports() {
+  return renderReportCategory();
+}
+function openReportCategory(cat) {
+  state.activeTab = 'reports';
+  navigate('#/reports/category');
+}
+function renderReportCategory() {
+  return reportsShell('By Category', 'category');
+}
+function renderReportAccount() { return reportsShell('By Account', 'account'); }
+function renderReportTrend() { return reportsShell('Monthly Trend', 'trend'); }
+function renderReportSavings() { return reportsShell('Savings Progress', 'savings'); }
+
+function reportsShell(title, active) {
+  const pills = [
+    { id:'category', label:'By Category', route:'#/reports/category' },
+    { id:'account', label:'By Account', route:'#/reports/account' },
+    { id:'trend', label:'Trend', route:'#/reports/trend' },
+    { id:'savings', label:'Savings', route:'#/reports/savings' },
+  ];
+  const totalSpent = state.budgets.reduce((s, b) => s + b.spent, 0);
+  const totalPlanned = state.budgets.reduce((s, b) => s + b.planned, 0);
+  let body = '';
+  if (active === 'category') {
+    body = `
+      <div class="card center-text">
+        <div class="label">Total spent · August</div>
+        <div class="amount-hero">${fmt(totalSpent)}</div>
+        <div class="sub">${Math.round(totalSpent/totalPlanned*100)}% of ${fmt(totalPlanned)} budgeted</div>
+      </div>
+      <div class="section-title">By category</div>
+      <div class="list-card">
+        ${state.budgets.map(b => {
+          const c = categoryByName(b.cat);
+          const pct = Math.round(b.spent / b.planned * 100);
+          const cls = pct >= 100 ? 'danger' : pct >= 80 ? 'warn' : '';
+          return `
+            <div class="cat-row ${cls}" onclick="toast('Drill into ${b.cat}')">
+              <div class="icon">${c ? c.icon : '📦'}</div>
+              <div class="text"><strong>${b.cat}</strong><div class="bar-wrap"><div class="bar-fill" style="width:${Math.min(pct, 100)}%"></div></div></div>
+              <div class="amount">${fmt(b.spent)}<small>${pct}%</small></div>
+            </div>`;
+        }).join('')}
+      </div>`;
+  } else if (active === 'account') {
+    body = `
+      <div class="card center-text">
+        <div class="label">By account · August</div>
+        <div class="amount-hero">${fmt(totalSpent)}</div>
+      </div>
+      <div class="list-card">
+        ${state.accounts.map(a => `
+          <div class="row">
+            <div class="icon">💳</div>
+            <div class="text"><strong>${a.name}</strong><span>${a.type}</span></div>
+            <div class="amount">${fmt(Math.round(totalSpent * 0.4))}<small>est.</small></div>
+          </div>
+        `).join('')}
+      </div>`;
+  } else if (active === 'trend') {
+    body = `
+      <div class="card">
+        <div class="label">Monthly trend</div>
+        <div class="amount-hero">${fmt(totalSpent)}</div>
+        <div class="sub">August 2026</div>
+      </div>
+      <div class="card">
+        <div style="height:160px; display:flex; align-items:flex-end; gap:8px; padding-top: var(--s3);">
+          ${[60,75,55,90,80,70,85,totalSpent/300].map((h, i) => `
+            <div style="flex:1; background: var(--accent); border-radius: 4px 4px 0 0; height:${h}%; opacity: ${i === 7 ? 1 : 0.6};"></div>
+          `).join('')}
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-top: var(--s2); font-size: 11px; color: var(--text-muted);">
+          <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span><span style="color: var(--accent); font-weight: 600;">Aug</span>
+        </div>
+      </div>`;
+  } else if (active === 'savings') {
+    const pct = Math.round(state.savings.saved / state.savings.target * 100);
+    body = `
+      <div class="card center-text">
+        <div class="label">Saved · ${state.savings.month}</div>
+        <div class="amount-hero">${fmt(state.savings.saved)}</div>
+        <div class="sub">of ${fmt(state.savings.target)} · ${pct}%</div>
+        <div class="bar ${pct >= 100 ? '' : ''}" style="margin-top: var(--s3);"><div class="bar-fill" style="width:${Math.min(pct, 100)}%; background: var(--success);"></div></div>
+      </div>
+      <p class="muted center-text" style="font-size: 13px;">Saved is computed from your expenses logged under "Savings" — no separate ledger.</p>
+      <button class="btn btn-secondary btn-block" onclick="openSheet('set-savings')">Edit goal</button>`;
+  }
+  return `
+  <div class="appbar"><h1>Reports</h1></div>
+  <div class="content no-pad-top">
+    <div class="tabs">${pills.map(p => `<button class="tab-pill ${active === p.id ? 'active' : ''}" onclick="navigate('${p.route}')">${p.label}</button>`).join('')}</div>
+    <div style="padding: 0 var(--s4) var(--s8);">${body}</div>
+  </div>
+  ${tabbarEl()}`;
+}
+
+/* ─── More ─────────────────────────────────────────────────────────── */
+function renderMore() {
+  return `
+  <div class="appbar"><h1>More</h1></div>
+  <div class="content padded">
+    <div class="settings-list">
+      <div class="settings-row" onclick="navigate('#/accounts')"><div class="label">Accounts</div><div class="chev">›</div></div>
+      <div class="settings-row" onclick="navigate('#/categories')"><div class="label">Categories</div><div class="chev">›</div></div>
+      <div class="settings-row" onclick="navigate('#/recurring')"><div class="label">Recurring expenses</div><div class="chev">›</div></div>
+      <div class="settings-row" onclick="navigate('#/savings')"><div class="label">Savings goals</div><div class="chev">›</div></div>
+      <div class="settings-row" onclick="navigate('#/settings')"><div class="label">Settings</div><div class="chev">›</div></div>
+    </div>
+  </div>
+  ${tabbarEl()}`;
+}
+
+/* ─── Accounts ─────────────────────────────────────────────────────── */
+function renderAccounts() {
+  return `
+  <div class="appbar">
+    <button class="back" onclick="navigate('#/more')">‹</button>
+    <h1>Accounts</h1>
+    <div class="spacer"></div>
+    <button class="action" onclick="openSheet('add-account')">+ Add</button>
+  </div>
+  <div class="content padded">
+    ${state.accounts.map(a => `
+      <div class="card" onclick="openSheet('edit-account', { id: '${a.id}' })">
+        <div class="card-row">
+          <div class="icon" style="width:40px;height:40px;font-size:20px;background:var(--surface-muted);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;">💳</div>
+          <div style="flex:1">
+            <div style="font-weight:600;">${a.name}</div>
+            <div style="font-size:12px;color:var(--text-muted);">${a.type}</div>
+          </div>
+          <div style="font-family:var(--mono);font-weight:600;">${fmt(a.balance)}</div>
+        </div>
+      </div>
+    `).join('')}
+  </div>`;
+}
+
+/* ─── Categories ───────────────────────────────────────────────────── */
+function renderCategories() {
+  return `
+  <div class="appbar">
+    <button class="back" onclick="navigate('#/more')">‹</button>
+    <h1>Categories</h1>
+    <div class="spacer"></div>
+    <button class="action" onclick="openSheet('add-category')">+ Add</button>
+  </div>
+  <div class="content padded">
+    <p class="muted" style="font-size: 13px; margin-bottom: var(--s4);">${state.categories.length} categories. Tap one to edit.</p>
+    <div class="list-card">
+      ${state.categories.map(c => `
+        <div class="row" onclick="openSheet('edit-category', { id: '${c.id}' })">
+          <div class="icon">${c.icon}</div>
+          <div class="text"><strong>${c.name}</strong><span>Tap to edit</span></div>
+          <div class="chev">›</div>
+        </div>
+      `).join('')}
+    </div>
+  </div>`;
+}
+
+/* ─── Recurring ────────────────────────────────────────────────────── */
+function renderRecurring() {
+  const due = state.recurring.filter(r => r.active && new Date(r.next) <= new Date('2026-08-30'));
+  const active = state.recurring.filter(r => r.active && new Date(r.next) > new Date('2026-08-30'));
+  const inactive = state.recurring.filter(r => !r.active);
+  const group = (title, items, emptyMsg) => `
+    <div class="section-title">${title}</div>
+    ${items.length === 0 ? `<p class="muted" style="font-size: 13px;">${emptyMsg}</p>` : `
+      <div class="list-card">${items.map(r => `
+        <div class="row" onclick="openSheet('edit-recurring', { id: '${r.id}' })">
+          <div class="icon">${categoryByName(r.category).icon}</div>
+          <div class="text"><strong>${r.name}</strong><span>${fmt(r.amount)} · ${r.freq} · next ${r.next}</span></div>
+          <div class="chev">›</div>
+        </div>
+      `).join('')}</div>`}`;
+  return `
+  <div class="appbar">
+    <button class="back" onclick="navigate('#/more')">‹</button>
+    <h1>Recurring expenses</h1>
+    <div class="spacer"></div>
+    <button class="action" onclick="openSheet('add-recurring')">+ Add</button>
+  </div>
+  <div class="content padded">
+    ${due.length > 0 ? `
+      <div class="banner" onclick="openConfirmRecurring()" style="margin-top:0;">
+        <div class="banner-icon">!</div>
+        <div class="banner-text">
+          <strong>${due.length} due now</strong>
+          <span>Tap to review and confirm</span>
+        </div>
+        <button class="banner-cta">Review</button>
+      </div>
+    ` : ''}
+    ${group('Due now', due, 'Nothing due right now.')}
+    ${group('Active', active, 'No active recurring expenses.')}
+    ${group('Inactive', inactive, '')}
+  </div>`;
+}
+
+/* ─── Savings ──────────────────────────────────────────────────────── */
+function renderSavings() {
+  const pct = Math.round(state.savings.saved / state.savings.target * 100);
+  return `
+  <div class="appbar">
+    <button class="back" onclick="navigate('#/more')">‹</button>
+    <h1>Savings goals</h1>
+    <div class="spacer"></div>
+    <button class="action" onclick="openSheet('set-savings')">Edit</button>
+  </div>
+  <div class="content padded">
+    <div class="savings-card">
+      <div class="label">Saved · ${state.savings.month}</div>
+      <div class="amount">${fmt(state.savings.saved)}</div>
+      <div class="sub">of ${fmt(state.savings.target)} · ${pct}%</div>
+      <div class="bar"><div class="bar-fill" style="width:${Math.min(pct, 100)}%"></div></div>
+    </div>
+    <div class="card">
+      <div class="kv"><span>How is "saved" calculated?</span></div>
+      <p style="font-size: 13px; color: var(--text-muted); margin: var(--s3) 0 0; line-height: 20px;">
+        Saved is the sum of all expenses logged under the "Savings" category this month.
+        No separate ledger to maintain — your expense entries are the source of truth.
+      </p>
+    </div>
+  </div>`;
+}
+
+/* ─── Settings ─────────────────────────────────────────────────────── */
+function renderSettings() {
+  return `
+  <div class="appbar">
+    <button class="back" onclick="navigate('#/more')">‹</button>
+    <h1>Settings</h1>
+  </div>
+  <div class="content padded">
+    <div class="card">
+      <div class="kv"><span>Name</span><strong>Saqline</strong></div>
+      <div class="kv"><span>Email</span><strong>saqline@example.com</strong></div>
+      <div class="kv" style="cursor:pointer;"><span>Change email</span><strong style="color:var(--accent);">›</strong></div>
+    </div>
+    <div class="section-title">Preferences</div>
+    <div class="settings-list">
+      <div class="settings-row" onclick="toggleDark()"><div class="label">Dark mode</div><div class="toggle ${state.darkMode ? 'on' : ''}" id="darkToggle"></div></div>
+      <div class="settings-row"><div class="label">Haptic feedback</div><div class="toggle ${state.haptics ? 'on' : ''}" onclick="state.haptics=!state.haptics; render();"></div></div>
+    </div>
+    <div class="section-title">App</div>
+    <div class="settings-list">
+      <div class="settings-row" onclick="installPWA()"><div class="label">Install app</div><div class="chev">›</div></div>
+    </div>
+    <div class="settings-list" style="margin-top: var(--s4);">
+      <div class="settings-row danger" onclick="confirmSignOut()"><div class="label">Sign out</div></div>
+    </div>
+  </div>`;
+}
+function toggleDark() {
+  state.darkMode = !state.darkMode;
+  document.documentElement.style.setProperty('--surface-muted', state.darkMode ? '#0F1B1F' : '#F5F7F8');
+  document.documentElement.style.setProperty('--surface', state.darkMode ? '#152024' : '#FFFFFF');
+  document.documentElement.style.setProperty('--text', state.darkMode ? '#F0F4F5' : '#0F1B1F');
+  document.documentElement.style.setProperty('--text-muted', state.darkMode ? '#A4B2B6' : '#5C6B70');
+  document.documentElement.style.setProperty('--border', state.darkMode ? '#2A3A3F' : '#E3E7E8');
+  document.body.style.background = state.darkMode ? '#0A1418' : '#ECEEF1';
+  render();
+}
+function installPWA() { state.pwaInstalled = true; toast('PocketPlan installed.'); render(); }
+function confirmSignOut() {
+  openModal(`
+    <h3>Sign out?</h3>
+    <p>You can sign back in any time.</p>
+    <div class="actions">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="doSignOut()">Sign out</button>
+    </div>
+  `);
+}
+function doSignOut() { closeModal(); state.signedIn = false; navigate('#/auth/sign-in'); }
+
+/* ─── Sheets ───────────────────────────────────────────────────────── */
+function renderSheet() {
+  const s = document.getElementById('sheet');
+  if (!state.sheet) { s.innerHTML = ''; return; }
+  s.innerHTML = renderSheetContent(state.sheet, state.sheetData);
+}
+function renderSheetContent(name, d) {
+  if (name === 'add-expense' || name === 'edit-expense') return addExpenseSheet(d);
+  if (name === 'add-budget') return addBudgetSheet(d);
+  if (name === 'add-account' || name === 'edit-account') return accountSheet(d);
+  if (name === 'add-category' || name === 'edit-category') return categorySheet(d);
+  if (name === 'add-recurring' || name === 'edit-recurring') return recurringSheet(d);
+  if (name === 'set-savings') return savingsSheet();
+  if (name === 'confirm-recurring') return confirmRecurringSheet();
+  if (name === 'filter') return filterSheet();
+  return '';
+}
+
+function addExpenseSheet(d) {
+  const editing = state.sheet === 'edit-expense';
+  const exp = d && d.id ? state.expenses.find(x => x.id === d.id) : null;
+  const amount = exp ? exp.amount : '';
+  const cat = exp ? exp.cat : state.newExpenseCategory;
+  const acc = exp ? (exp.account || state.newExpenseAccount) : state.newExpenseAccount;
+  const desc = exp ? exp.desc : '';
+  const overBudget = state.budgets.find(b => b.cat === cat && b.spent >= b.planned * 0.8);
+  return `
+    <div class="handle"></div>
+    <div class="sheet-header">
+      <h2>${exp ? 'Edit expense' : 'Add expense'}</h2>
+      <button onclick="closeSheet()">Cancel</button>
+    </div>
+    <div class="amount-input">
+      <span class="currency">৳</span>
+      <input class="value" inputmode="decimal" placeholder="0" value="${amount}" />
+    </div>
+    <div class="field-label">Category</div>
+    <div class="scroller-wrap">
+      <div class="scroller">${state.categories.map(c => `
+        <button class="chip ${c.name === cat ? 'active' : ''}" onclick="state.newExpenseCategory='${c.name}'; renderSheet();">
+          <div class="chip-icon">${c.icon}</div><div class="chip-label">${c.name}</div>
+        </button>`).join('')}</div>
+    </div>
+    <div class="field-label">Account</div>
+    <div class="pill-row">
+      ${state.accounts.map(a => `
+        <button class="pill ${a.name === acc ? 'active' : ''}" onclick="state.newExpenseAccount='${a.name}'; renderSheet();">${a.name}</button>
+      `).join('')}
+      <button class="pill">+ Add</button>
+    </div>
+    <div class="field"><div class="field-label">Description</div>
+      <input class="input" placeholder="e.g., Lunch at canteen" value="${desc}" />
+    </div>
+    <div class="field"><div class="field-label">Date</div>
+      <input class="input" type="date" value="2026-08-30" />
+    </div>
+    ${overBudget ? `
+      <div class="warning-chip"><span class="dot"></span>This puts ${overBudget.cat} at ${Math.round(overBudget.spent / overBudget.planned * 100)}% of budget</div>
+    ` : ''}
+    <div class="flex-row">
+      ${exp ? `<button class="btn btn-danger" onclick="deleteExpense('${exp.id}')">Delete</button>` : ''}
+      <button class="btn btn-primary" onclick="saveExpense(${exp ? `'${exp.id}'` : 'null'})">${exp ? 'Save changes' : 'Save expense'}</button>
+    </div>
+  `;
+}
+function saveExpense(id) {
+  const sheet = document.getElementById('sheet');
+  const inputs = sheet.querySelectorAll('input');
+  const amountInput = sheet.querySelector('.amount-input .value');
+  const amount = parseFloat(amountInput.value) || 0;
+  // Description is the 1st plain input that isn't amount or date
+  const descInput = Array.from(sheet.querySelectorAll('.field .input')).find(i => i.type !== 'date');
+  const desc = descInput ? descInput.value : '';
+  if (id) {
+    const e = state.expenses.find(x => x.id === id);
+    if (e) { e.amount = amount; e.desc = desc; e.cat = state.newExpenseCategory; }
+  } else {
+    state.expenses.unshift({
+      id: 'e' + Date.now(),
+      date: 'today',
+      cat: state.newExpenseCategory,
+      icon: categoryByName(state.newExpenseCategory).icon,
+      desc: desc || state.newExpenseCategory,
+      amount: amount,
+    });
+    state.budgets.find(b => b.cat === state.newExpenseCategory).spent += amount;
+  }
+  closeSheet();
+  toast(id ? 'Expense updated.' : 'Expense saved.');
+  render();
+}
+function deleteExpense(id) {
+  state.expenses = state.expenses.filter(e => e.id !== id);
+  closeSheet();
+  toast('Expense deleted.');
+  render();
+}
+
+function addBudgetSheet(d) {
+  const cat = d && d.cat ? d.cat : 'Food';
+  return `
+    <div class="handle"></div>
+    <div class="sheet-header"><h2>Set budget</h2><button onclick="closeSheet()">Cancel</button></div>
+    <div class="field"><div class="field-label">Category</div>
+      <div class="icon-pick">
+        ${['Food','Transport','Bills','Shopping'].map(c => `
+          <button class="chip ${c === cat ? 'active' : ''}" onclick="openSheet('add-budget', { cat: '${c}' })">
+            <div class="emoji">${categoryByName(c).icon}</div>${c}
+          </button>`).join('')}
+      </div>
+    </div>
+    <div class="field"><div class="field-label">Monthly amount</div>
+      <div class="amount-input"><span class="currency">৳</span><input class="value" placeholder="0" value="6000" /></div>
+    </div>
+    <div class="flex-row">
+      <button class="btn btn-secondary" onclick="closeSheet()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveBudget('${cat}')">Save</button>
+    </div>
+  `;
+}
+function saveBudget(cat) {
+  const v = parseFloat(document.querySelector('#sheet .value').value) || 0;
+  const existing = state.budgets.find(b => b.cat === cat);
+  if (existing) existing.planned = v;
+  else state.budgets.push({ id: 'b' + Date.now(), cat, planned: v, spent: 0 });
+  closeSheet(); toast('Budget saved.'); render();
+}
+
+function accountSheet(d) {
+  const editing = d && d.id;
+  const acc = editing ? state.accounts.find(a => a.id === d.id) : { name: '', type: 'Cash', balance: 0 };
+  return `
+    <div class="handle"></div>
+    <div class="sheet-header"><h2>${editing ? 'Edit account' : 'Add account'}</h2><button onclick="closeSheet()">Cancel</button></div>
+    <div class="field"><div class="field-label">Name</div>
+      <input class="input" value="${acc.name}" placeholder="e.g., Cash, City Bank, bKash" />
+    </div>
+    <div class="field"><div class="field-label">Type</div>
+      <div class="pill-row">
+        ${['Cash','Bank','Card','Mobile Wallet','Other'].map(t => `
+          <button class="pill ${t === acc.type ? 'active' : ''}" onclick="this.parentNode.querySelectorAll('.pill').forEach(p=>p.classList.remove('active')); this.classList.add('active');">${t}</button>
+        `).join('')}
+      </div>
+    </div>
+    <div class="field"><div class="field-label">Balance <span class="muted" style="font-weight: 400;">(set manually)</span></div>
+      <div class="amount-input"><span class="currency">৳</span><input class="value" value="${acc.balance}" /></div>
+    </div>
+    <div class="flex-row">
+      ${editing ? `<button class="btn btn-danger" onclick="deleteAccount('${acc.id}')">Delete</button>` : ''}
+      <button class="btn btn-primary" onclick="toast('Account saved.'); closeSheet();">Save</button>
+    </div>
+  `;
+}
+function deleteAccount(id) {
+  const acc = state.accounts.find(a => a.id === id);
+  openModal(`
+    <h3>Delete "${acc.name}"?</h3>
+    <p>This will also delete any linked expenses. Continue?</p>
+    <div class="actions">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="state.accounts = state.accounts.filter(a=>a.id!=='${id}'); closeModal(); closeSheet(); toast('Account deleted.'); render();">Delete</button>
+    </div>
+  `);
+}
+
+function categorySheet(d) {
+  const editing = d && d.id;
+  const c = editing ? state.categories.find(x => x.id === d.id) : { name: '', icon: '📦' };
+  return `
+    <div class="handle"></div>
+    <div class="sheet-header"><h2>${editing ? 'Edit category' : 'Add category'}</h2><button onclick="closeSheet()">Cancel</button></div>
+    <div class="field"><div class="field-label">Name</div>
+      <input class="input" value="${c.name}" placeholder="e.g., School, Pet care" />
+    </div>
+    <div class="field"><div class="field-label">Icon</div>
+      <input class="input" value="${c.icon}" placeholder="Paste an emoji" />
+    </div>
+    <div class="flex-row">
+      ${editing ? `<button class="btn btn-danger" onclick="deleteCategory('${c.id}')">Delete</button>` : ''}
+      <button class="btn btn-primary" onclick="toast('Category saved.'); closeSheet();">Save</button>
+    </div>
+  `;
+}
+function deleteCategory(id) {
+  const c = state.categories.find(x => x.id === id);
+  openModal(`
+    <h3>Delete "${c.name}"?</h3>
+    <p>This will also delete any linked expenses and budgets. Continue?</p>
+    <div class="actions">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="closeModal(); closeSheet(); toast('Category deleted.'); render();">Delete</button>
+    </div>
+  `);
+}
+
+function recurringSheet(d) {
+  const editing = d && d.id;
+  const r = editing ? state.recurring.find(x => x.id === d.id) : { name: '', amount: 0, category: 'Bills', account: 'Cash', freq: 'Monthly', next: '2026-09-30' };
+  return `
+    <div class="handle"></div>
+    <div class="sheet-header"><h2>${editing ? 'Edit recurring' : 'Add recurring'}</h2><button onclick="closeSheet()">Cancel</button></div>
+    <div class="field"><div class="field-label">Name</div>
+      <input class="input" value="${r.name}" placeholder="e.g., Internet bill" />
+    </div>
+    <div class="field"><div class="field-label">Amount</div>
+      <div class="amount-input"><span class="currency">৳</span><input class="value" value="${r.amount}" /></div>
+    </div>
+    <div class="field-label">Category</div>
+    <div class="pill-row">
+      ${['Bills','Entertainment','Health','Food','Transport'].map(c => `
+        <button class="pill ${c === r.category ? 'active' : ''}">${c}</button>
+      `).join('')}
+    </div>
+    <div class="field-label">Account</div>
+    <div class="pill-row">
+      ${state.accounts.map(a => `<button class="pill ${a.name === r.account ? 'active' : ''}">${a.name}</button>`).join('')}
+    </div>
+    <div class="field-label">Frequency</div>
+    <div class="pill-row">
+      ${['Daily','Weekly','Monthly','Yearly'].map(f => `
+        <button class="pill ${f === r.freq ? 'active' : ''}">${f}</button>
+      `).join('')}
+    </div>
+    <div class="field"><div class="field-label">Next due date</div>
+      <input class="input" type="date" value="${r.next}" />
+    </div>
+    ${editing ? `<p class="muted" style="font-size: 12px; margin: var(--s3) 0;">Editing this template affects <strong>future</strong> occurrences only. Past confirmed expenses remain unchanged.</p>` : ''}
+    <div class="flex-row">
+      ${editing ? `<button class="btn btn-danger" onclick="closeSheet(); toast('Recurring deleted.');">Delete</button>` : ''}
+      <button class="btn btn-primary" onclick="closeSheet(); toast('Recurring saved.');">Save</button>
+    </div>
+  `;
+}
+
+function savingsSheet() {
+  return `
+    <div class="handle"></div>
+    <div class="sheet-header"><h2>Savings goal · ${state.savings.month}</h2><button onclick="closeSheet()">Cancel</button></div>
+    <div class="field"><div class="field-label">Monthly target</div>
+      <div class="amount-input"><span class="currency">৳</span><input class="value" value="${state.savings.target}" /></div>
+    </div>
+    <p class="muted" style="font-size: 13px; margin-bottom: var(--s4);">
+      Saved is computed automatically from your expenses logged under "Savings" this month.
+    </p>
+    <button class="btn btn-primary btn-block" onclick="state.savings.target = parseFloat(document.querySelector('#sheet .value').value) || state.savings.target; closeSheet(); toast('Goal updated.'); render();">Save goal</button>
+  `;
+}
+
+function openConfirmRecurring() {
+  state.recurringIndex = 0;
+  openSheet('confirm-recurring');
+}
+function filterSheet() {
+  const toggle = (set, key) => {
+    if (set.has(key)) set.delete(key); else set.add(key);
+    renderSheet();
+  };
+  const ranges = [
+    { id: 'all', label: 'All time' },
+    { id: 'this-month', label: 'This month' },
+    { id: 'last-month', label: 'Last month' },
+    { id: 'last-7', label: 'Last 7 days' },
+  ];
+  return `
+    <div class="handle"></div>
+    <div class="sheet-header"><h2>Filter expenses</h2><button onclick="closeSheet()">Cancel</button></div>
+    <div class="field"><div class="field-label">Date range</div>
+      <div class="pill-row">
+        ${ranges.map(r => `
+          <button class="pill ${filterState.dateRange === r.id ? 'active' : ''}" onclick="filterState.dateRange='${r.id}'; renderSheet();">${r.label}</button>
+        `).join('')}
+      </div>
+    </div>
+    <div class="field"><div class="field-label">Categories <span class="muted" style="font-weight:400;">(${filterState.categories.size} selected)</span></div>
+      <div class="pill-row">
+        ${state.categories.map(c => `
+          <button class="pill ${filterState.categories.has(c.name) ? 'active' : ''}" onclick="toggle(filterState.categories,'${c.name}')">${c.icon} ${c.name}</button>
+        `).join('')}
+      </div>
+    </div>
+    <div class="field"><div class="field-label">Accounts <span class="muted" style="font-weight:400;">(${filterState.accounts.size} selected)</span></div>
+      <div class="pill-row">
+        ${state.accounts.map(a => `
+          <button class="pill ${filterState.accounts.has(a.name) ? 'active' : ''}" onclick="toggle(filterState.accounts,'${a.name}')">${a.name}</button>
+        `).join('')}
+      </div>
+    </div>
+    <div class="flex-row">
+      <button class="btn btn-secondary" onclick="filterState.categories.clear(); filterState.accounts.clear(); filterState.dateRange='all'; renderSheet();">Clear</button>
+      <button class="btn btn-primary" onclick="applyFilter()">Apply</button>
+    </div>
+  `;
+}
+function applyFilter() {
+  closeSheet();
+  const n = filterState.categories.size + filterState.accounts.size + (filterState.dateRange !== 'all' ? 1 : 0);
+  if (n === 0) toast('Filter cleared.'); else toast(`${n} filter${n > 1 ? 's' : ''} applied.`);
+  render();
+}
+
+function confirmRecurringSheet() {
+  const r = state.recurring[state.recurringIndex];
+  if (!r) { closeSheet(); toast('All caught up.'); return; }
+  const c = categoryByName(r.category);
+  return `
+    <div class="handle"></div>
+    <div class="queue">
+      ${state.recurring.filter(x => state.recurring.indexOf(x) >= state.recurringIndex && state.recurring.indexOf(x) < state.recurringIndex + state.recurring.length).map((_, i) => `
+        <div class="dot ${i === 0 ? '' : 'pending'}"></div>
+      `).join('')}
+    </div>
+    <div class="sheet-header"><h2>Confirm recurring expense</h2><button onclick="closeSheet()">Cancel</button></div>
+    <div class="sheet-subtitle">Review and confirm to create an actual expense entry.</div>
+    <div class="field"><div class="field-label">Amount</div>
+      <div class="amount-input"><span class="currency">৳</span><input class="value" value="${r.amount}" /></div>
+    </div>
+    <div class="field-label">Category</div>
+    <div class="icon-pick">
+      ${['Food','Transport','Bills','Shopping'].map(cat => `
+        <button class="chip ${cat === r.category ? 'active' : ''}" onclick="this.parentNode.querySelectorAll('.chip').forEach(p=>p.classList.remove('active')); this.classList.add('active');">
+          <div class="emoji">${categoryByName(cat).icon}</div>${cat}
+        </button>`).join('')}
+    </div>
+    <div class="field" style="margin-top:var(--s3);"><div class="field-label">Account</div>
+      <div class="pill-row">
+        ${state.accounts.map(a => `<button class="pill ${a.name === r.account ? 'active' : ''}">${a.name}</button>`).join('')}
+      </div>
+    </div>
+    <div class="field"><div class="field-label">Description</div>
+      <input class="input" value="${r.name} — ${r.next.split(' ').slice(1).join(' ')}" />
+    </div>
+    <div class="readonly-row"><span>Frequency</span><strong>${r.freq}</strong></div>
+    <div class="readonly-row"><span>Due</span><strong>${r.next}</strong></div>
+    <div class="flex-row" style="margin-top: var(--s5);">
+      <button class="btn btn-secondary" onclick="skipRecurring()">Skip</button>
+      <button class="btn btn-primary" onclick="confirmRecurring('${r.id}')">Confirm</button>
+    </div>
+  `;
+}
+function confirmRecurring(id) {
+  const r = state.recurring.find(x => x.id === id);
+  if (r) {
+    state.expenses.unshift({
+      id: 'e' + Date.now(), date: 'today',
+      cat: r.category, icon: categoryByName(r.category).icon,
+      desc: r.name + ' — confirmed', amount: r.amount,
+    });
+    if (state.budgets.find(b => b.cat === r.category)) state.budgets.find(b => b.cat === r.category).spent += r.amount;
+  }
+  state.recurringIndex++;
+  if (state.recurringIndex >= state.recurring.length) { closeSheet(); toast('Recurring expense saved.'); }
+  else renderSheet();
+}
+function skipRecurring() {
+  state.recurringIndex++;
+  if (state.recurringIndex >= state.recurring.length) { closeSheet(); toast('Done for now.'); }
+  else renderSheet();
+}
+
+/* ─── Boot ─────────────────────────────────────────────────────────── */
+function tickClock() {
+  const d = new Date();
+  document.getElementById('clock').textContent = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+tickClock(); setInterval(tickClock, 60000);
+
+if (!location.hash) navigate('#/auth/sign-in');
+else { state.route = location.hash; render(); }
+</script>
+</body>
+</html>

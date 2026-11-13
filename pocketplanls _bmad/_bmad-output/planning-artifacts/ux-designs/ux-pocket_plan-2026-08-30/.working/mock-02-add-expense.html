@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PocketPlan — Add Expense sheet mock</title>
+<style>
+:root {
+  --accent: #1F7A8C; --accent-pressed: #185965;
+  --warning: #E0A92A; --danger: #C0392B;
+  --surface: #FFFFFF; --surface-muted: #F5F7F8;
+  --border: #E3E7E8;
+  --text: #0F1B1F; --text-muted: #5C6B70; --text-inverse: #FFFFFF;
+  --overlay: rgba(15, 27, 31, 0.5);
+  --radius-md: 8px; --radius-lg: 12px; --radius-xl: 16px; --radius-pill: 9999px;
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 20px; --s6: 24px;
+  --font: Inter, system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: var(--font);
+  font-size: 16px; line-height: 24px;
+  color: var(--text);
+  background: var(--overlay);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+.phone {
+  width: 375px; min-height: 812px;
+  margin: 24px auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 32px;
+  overflow: hidden;
+  position: relative;
+  display: flex; flex-direction: column;
+}
+.sheet {
+  margin-top: auto;
+  background: var(--surface);
+  border-top-left-radius: var(--radius-xl);
+  border-top-right-radius: var(--radius-xl);
+  box-shadow: 0 -8px 24px rgba(15,27,31,0.12);
+  padding: var(--s3) var(--s4) var(--s4);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.handle {
+  width: 40px; height: 4px;
+  background: var(--border);
+  border-radius: var(--radius-pill);
+  margin: 0 auto var(--s3);
+}
+.sheet-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: var(--s4);
+}
+.sheet-header h2 { font-size: 20px; font-weight: 600; margin: 0; }
+.sheet-header button {
+  background: transparent; border: 0;
+  color: var(--text-muted); font-size: 14px;
+  font-family: inherit; cursor: pointer; padding: var(--s2);
+}
+.amount-field {
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--s4);
+  margin-bottom: var(--s4);
+  display: flex; align-items: baseline; gap: var(--s2);
+}
+.amount-field .currency {
+  font-size: 24px; font-weight: 500; color: var(--text-muted);
+}
+.amount-field .amount {
+  font-family: var(--mono);
+  font-size: 32px; line-height: 40px; font-weight: 700;
+  flex: 1;
+  border: 0; background: transparent;
+  outline: none; color: var(--text);
+  font-family: var(--mono);
+}
+.amount-field .amount.placeholder { color: var(--text-muted); font-weight: 400; }
+
+.field-label {
+  font-size: 12px; font-weight: 600;
+  color: var(--text-muted); text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--s2);
+}
+.scroller {
+  display: flex; gap: var(--s3);
+  overflow-x: auto; scroll-snap-type: x mandatory;
+  padding-bottom: var(--s3);
+  margin-bottom: var(--s4);
+  margin-left: -16px; margin-right: -16px;
+  padding-left: var(--s4); padding-right: var(--s4);
+}
+.scroller::-webkit-scrollbar { display: none; }
+.chip {
+  flex: 0 0 84px;
+  display: flex; flex-direction: column;
+  align-items: center; gap: var(--s2);
+  scroll-snap-align: center;
+  cursor: pointer;
+}
+.chip-icon {
+  width: 56px; height: 56px;
+  border-radius: var(--radius-lg);
+  background: var(--surface-muted);
+  border: 2px solid transparent;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px;
+  transition: border-color 0.15s;
+}
+.chip.active .chip-icon { border-color: var(--accent); background: var(--surface); }
+.chip-label { font-size: 12px; color: var(--text); text-align: center; line-height: 16px; }
+.chip.active .chip-label { font-weight: 600; color: var(--accent); }
+
+.account-row {
+  display: flex; gap: var(--s2);
+  flex-wrap: wrap;
+  margin-bottom: var(--s4);
+}
+.account-chip {
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  font-size: 14px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.account-chip.active { border-color: var(--accent); color: var(--accent); background: rgba(31,122,140,0.06); font-weight: 600; }
+
+.description-field {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: 16px;
+  font-family: inherit;
+  background: var(--surface);
+  color: var(--text);
+  margin-bottom: var(--s4);
+  outline: none;
+}
+.description-field:focus { border-color: var(--accent); }
+
+.warning-chip {
+  display: inline-flex; align-items: center; gap: var(--s2);
+  background: rgba(224,169,42,0.12);
+  color: #8B6914;
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  font-size: 12px; font-weight: 600;
+  margin-bottom: var(--s4);
+}
+.warning-chip .dot {
+  width: 6px; height: 6px;
+  background: var(--warning); border-radius: 50%;
+}
+
+.actions {
+  display: flex; gap: var(--s3);
+  margin-top: var(--s4);
+}
+.btn {
+  flex: 1; height: 52px;
+  border-radius: var(--radius-md);
+  font-size: 16px; font-weight: 600;
+  font-family: inherit;
+  border: 0; cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-secondary { background: var(--surface-muted); color: var(--text); }
+.btn-secondary:hover { background: #ECEEEF; }
+.btn-primary { background: var(--accent); color: var(--text-inverse); }
+.btn-primary:hover { background: var(--accent-pressed); }
+
+/* Numeric keypad (mobile-only UX, simplified for visual reference) */
+.keypad-hint {
+  margin-top: var(--s3);
+  text-align: center;
+  font-size: 12px; color: var(--text-muted);
+}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="sheet">
+    <div class="handle"></div>
+    <div class="sheet-header">
+      <h2>Add expense</h2>
+      <button>Cancel</button>
+    </div>
+
+    <!-- AmountInput (§4.1) -->
+    <div class="amount-field">
+      <span class="currency">৳</span>
+      <input class="amount placeholder" placeholder="0" inputmode="decimal" value="120" />
+    </div>
+
+    <!-- CategoryPicker (§4.2) -->
+    <div class="field-label">Category</div>
+    <div class="scroller">
+      <div class="chip active"><div class="chip-icon">🍔</div><div class="chip-label">Food</div></div>
+      <div class="chip"><div class="chip-icon">🚗</div><div class="chip-label">Transport</div></div>
+      <div class="chip"><div class="chip-icon">🧾</div><div class="chip-label">Bills</div></div>
+      <div class="chip"><div class="chip-icon">🛍️</div><div class="chip-label">Shopping</div></div>
+      <div class="chip"><div class="chip-icon">⚕️</div><div class="chip-label">Health</div></div>
+      <div class="chip"><div class="chip-icon">🎒</div><div class="chip-label">Education</div></div>
+      <div class="chip"><div class="chip-icon">🎬</div><div class="chip-label">Entertainment</div></div>
+      <div class="chip"><div class="chip-icon">💰</div><div class="chip-label">Savings</div></div>
+      <div class="chip"><div class="chip-icon">📦</div><div class="chip-label">Misc</div></div>
+    </div>
+
+    <!-- AccountPicker (§4.3) -->
+    <div class="field-label">Account</div>
+    <div class="account-row">
+      <div class="account-chip active">Cash</div>
+      <div class="account-chip">City Bank</div>
+      <div class="account-chip">bKash</div>
+      <div class="account-chip">+ Add</div>
+    </div>
+
+    <!-- Description -->
+    <div class="field-label">Description</div>
+    <input class="description-field" placeholder="e.g., Lunch at canteen" value="Lunch at canteen" />
+
+    <!-- Budget overage chip (§5.6) — shown only when category is over budget -->
+    <!-- For Food at 50%, no chip. For Transport at 95%, a warning would appear here. -->
+
+    <div class="actions">
+      <button class="btn btn-secondary">Cancel</button>
+      <button class="btn btn-primary">Save expense</button>
+    </div>
+
+    <div class="keypad-hint">Numeric keypad appears automatically on mobile</div>
+  </div>
+</div>
+</body>
+</html>
