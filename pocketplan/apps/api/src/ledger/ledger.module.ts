@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
-import { FileLedgerStore } from './file-ledger.store';
 import { LedgerController } from './ledger.controller';
 import { LedgerService } from './ledger.service';
 import { LedgerStore } from './ledger.store';
+import { PrismaLedgerStore } from './prisma-ledger.store';
 import { RecurringController } from './recurring.controller';
 import { RecurringService } from './recurring.service';
 
@@ -13,7 +13,8 @@ import { RecurringService } from './recurring.service';
   providers: [
     LedgerService,
     RecurringService,
-    { provide: LedgerStore, useClass: FileLedgerStore },
+    // Supabase Postgres. Tests swap in FileLedgerStore (no database needed).
+    { provide: LedgerStore, useClass: PrismaLedgerStore },
   ],
 })
 export class LedgerModule {}

@@ -5,16 +5,20 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 import type { Request } from 'express';
 import { UsersRepository } from '../users/users.repository';
+import { TokenVerifier } from './token-verifier';
 
 type AuthedRequest = Request & { userId?: string };
 
+/**
+ * Requires a valid Supabase sign-in token (Authorization: Bearer <token>)
+ * belonging to a user who still has a PocketPlan profile.
+ */
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
-    private readonly jwt: JwtService,
+    private readonly tokens: TokenVerifier,
     private readonly users: UsersRepository,
   ) {}
 
@@ -24,18 +28,17 @@ export class AuthGuard implements CanActivate {
     if (scheme !== 'Bearer' || !token) {
       throw new UnauthorizedException('Sign in to continue');
     }
-    let payload: { sub: string; iat: number };
+    let userId: string;
     try {
-      payload = await this.jwt.verifyAsync(token);
+      userId = await this.tokens.verify(token);
     } catch {
       throw new UnauthorizedException('Your session has expired');
     }
-    // Tokens from before a password change (or for deleted accounts) stop working.
-    const user = await this.users.findById(payload.sub);
-    if (!user || payload.iat < (user.passwordChangedAt ?? 0)) {
+    // Deleted accounts stop working even if their token hasn't expired yet.
+    if (!(await this.users.findById(userId))) {
       throw new UnauthorizedException('Your session has expired');
     }
-    request.userId = payload.sub;
+    request.userId = userId;
     return true;
   }
 }

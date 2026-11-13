@@ -1,0 +1,24 @@
+# Step 14: Reports
+
+**Status:** ⏳ Not started · **PRD:** 6.9 · **Depends on:** Step 13
+
+## Goal
+A Reports screen with the charts listed in the PRD.
+
+## Tasks
+1. **API:** extend `/reports`, calculating totals in the database (SQL `GROUP BY` through Prisma) rather than in JavaScript:
+   - spending by category (exists, reuse)
+   - spending by wallet
+   - monthly trend (last 6–12 months)
+   - budget use per category
+   - savings progress (from Step 13)
+   - leave room for an optional `?group_id=` filter. It's switched on in Step 17.
+2. **Web:** a **Reports** screen with a month or range picker and the charts. Use one chart library, styled to match the [UI guide](../ui-guide.md); two columns on desktop.
+3. Each chart has a text or table alternative for accessibility.
+4. Tests: totals in reports match the expense list exactly for the same period.
+
+## Done when
+- [ ] All five report types available and correct
+- [ ] Charts readable in both themes and at phone, tablet and desktop widths
+- [ ] Bugs found during this step fixed and logged in [ongoing-bug-fixing.md](ongoing-bug-fixing.md)
+- [ ] Lint, tests, and build pass

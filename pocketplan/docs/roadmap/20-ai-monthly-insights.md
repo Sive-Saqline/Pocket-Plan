@@ -1,12 +1,12 @@
-# Step 19: AI: monthly insights
+# Step 20: AI: monthly insights
 
-**Status:** ⏳ Not started · **PRD:** 6.16, 11 · **Depends on:** Step 18
+**Status:** ⏳ Not started · **PRD:** 6.16, 11 · **Depends on:** Step 19
 
 ## Goal
 A short summary of the month in plain language, based on the user's real numbers.
 
 ## Tasks
-1. `POST /ai/insights` (for the user, or for a group with `group_id`): the API gathers category totals, budgets, the previous month for comparison, and the Step 18 flags, then asks Claude for:
+1. `POST /ai/insights` (for the user, or for a group with `group_id`): the API gathers category totals, budgets, the previous month for comparison, and the Step 19 flags, then asks Claude for:
    - a short summary,
    - one note on anything unusual,
    - one forecast for next month.

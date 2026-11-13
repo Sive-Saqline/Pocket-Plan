@@ -5,7 +5,7 @@
  * and the size.
  *
  * Demo storage keeps the photo as a data URL on the user record. Roadmap
- * Step 22 moves it to Supabase Storage.
+ * Step 11 moves it to Supabase Storage.
  */
 
 export const AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;

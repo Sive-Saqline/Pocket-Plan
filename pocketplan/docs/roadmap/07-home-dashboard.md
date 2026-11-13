@@ -7,4 +7,4 @@
 - `GET /reports/summary?month=YYYY-MM`.
 
 ## Known gaps (picked up later)
-- Spending by account, monthly trend, budget use, savings progress, and group reports: Step 13.
+- Spending by account, monthly trend, budget use, savings progress, and group reports: Step 14.

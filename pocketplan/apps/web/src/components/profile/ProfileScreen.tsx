@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/Card";
 import { Toast, useToast } from "@/components/ui/Toast";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { ApiError } from "@/lib/api";
-import { useAuth, type AuthResult, type User } from "@/lib/auth";
+import { useAuth, type User } from "@/lib/auth";
 import { AVATAR_ACCEPT, AvatarFileError, prepareAvatar } from "@/lib/avatar";
 import { applyTheme, type Theme } from "@/lib/theme";
 
@@ -251,7 +251,7 @@ function ThemeCard({ user, onError }: { user: User; onError: (message: string) =
 }
 
 function PasswordCard({ onChanged }: { onChanged: () => void }) {
-  const { request, acceptSession } = useAuth();
+  const { changePassword } = useAuth();
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [errors, setErrors] = useState<{ current?: string; next?: string }>({});
@@ -269,12 +269,7 @@ function PasswordCard({ onChanged }: { onChanged: () => void }) {
 
     setBusy(true);
     try {
-      acceptSession(
-        await request<AuthResult>("/auth/change-password", {
-          method: "POST",
-          body: { currentPassword: current, newPassword: next },
-        }),
-      );
+      await changePassword(current, next);
       setCurrent("");
       setNext("");
       onChanged();

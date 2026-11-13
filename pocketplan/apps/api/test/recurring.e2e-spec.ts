@@ -1,17 +1,12 @@
-import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { Test } from '@nestjs/testing';
-import { mkdtempSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import { AuthModule } from '../src/auth/auth.module';
 import { LedgerModule } from '../src/ledger/ledger.module';
+import { createTestApp, TestApp } from './support/test-app';
 
 // Throwaway accounts + ledger files; no database needed.
 describe('Recurring expenses (e2e)', () => {
   let app: INestApplication;
-  let dir: string;
+  let t: TestApp;
   let rafi: string;
   let nusrat: string;
   let bills: string;
@@ -38,39 +33,10 @@ describe('Recurring expenses (e2e)', () => {
   });
 
   beforeAll(async () => {
-    dir = mkdtempSync(join(tmpdir(), 'pp-recurring-'));
-    process.env.USERS_FILE = join(dir, 'users.json');
-    process.env.LEDGER_DIR = join(dir, 'ledger');
-    const moduleRef = await Test.createTestingModule({
-      imports: [
-        ConfigModule.forRoot({ isGlobal: true }),
-        AuthModule,
-        LedgerModule,
-      ],
-    }).compile();
-    app = moduleRef.createNestApplication();
-    app.useGlobalPipes(
-      new ValidationPipe({
-        whitelist: true,
-        forbidNonWhitelisted: true,
-        transform: true,
-      }),
-    );
-    await app.init();
-
-    const register = async (name: string) =>
-      (
-        await http()
-          .post('/auth/register')
-          .send({
-            name,
-            email: `${name}@example.com`,
-            password: 'password-123',
-          })
-          .expect(201)
-      ).body.accessToken as string;
-    rafi = await register('rafi');
-    nusrat = await register('nusrat');
+    t = await createTestApp([LedgerModule]);
+    app = t.app;
+    rafi = t.signUp('rafi');
+    nusrat = t.signUp('nusrat');
     const categories = (await as(rafi).get('/categories').expect(200)).body;
     const id = (name: string) =>
       categories.find((c: { name: string }) => c.name === name).id;
@@ -80,10 +46,7 @@ describe('Recurring expenses (e2e)', () => {
   });
 
   afterAll(async () => {
-    await app.close();
-    rmSync(dir, { recursive: true, force: true });
-    delete process.env.USERS_FILE;
-    delete process.env.LEDGER_DIR;
+    await t.close();
   });
 
   it('requires sign-in', async () => {

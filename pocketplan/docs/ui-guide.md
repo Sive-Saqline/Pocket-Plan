@@ -1,6 +1,6 @@
 # PocketPlan UI Guide
 
-How screens should look and which shared pieces to use. Follow this for every new screen (Roadmap Steps 11–21).
+How screens should look and which shared pieces to use. Follow this for every new screen.
 
 ## Rules
 
@@ -18,7 +18,7 @@ How screens should look and which shared pieces to use. Follow this for every ne
 | Logo (mark + wordmark) | `components/brand/Logo.tsx`: `<Logo />` or `<Logo variant="mark" />` |
 | Browser tab icon | `src/app/icon.svg` |
 | Apple touch icon | `src/app/apple-icon.png` |
-| App icons for the installable app (Step 20) | `public/icons/icon-192.png`, `icon-512.png`, `icon-maskable-512.png` |
+| App icons for the installable app (Step 21) | `public/icons/icon-192.png`, `icon-512.png`, `icon-maskable-512.png` |
 
 The mark is a pocket with a check mark on a teal (`--accent`) rounded tile. If the artwork changes, update `Logo.tsx`, `icon.svg`, and the paths in `scripts/generate-icons.mjs`, then run `node scripts/generate-icons.mjs` from `apps/web`.
 

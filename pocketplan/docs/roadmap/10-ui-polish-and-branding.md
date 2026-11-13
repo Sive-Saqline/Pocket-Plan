@@ -1,12 +1,12 @@
 # Step 10: UI polish & branding
 
-**Status:** 🟡 Partially done (paused 2026-11-13; next: Step 22) · **Depends on:** nothing (first remaining step)
+**Status:** 🟡 Partially done (paused 2026-11-13; next: Step 11, Supabase) · **Depends on:** nothing
 
 **Also done in this step:** responsive desktop/tablet layout with a sidebar (bug B4), profile photo upload, web app pinned to port 3000.
 **Still open:** visual check of Register, the Recurring screens and desktop width; a full `npm run build`; moving the older buttons onto the shared `Button`.
 
 ## Goal
-Give PocketPlan a consistent, professional look **before** new screens are built, so Steps 11–21 use the same icons, logo, and components from the start. This step changes only how things look, never what they do.
+Give PocketPlan a consistent, professional look **before** new screens are built, so later steps use the same icons, logo, and components from the start. This step changes only how things look, never what they do.
 
 ## Tasks
 1. **Remove emojis (about 40 lines across the web app and the default categories).**
@@ -16,7 +16,7 @@ Give PocketPlan a consistent, professional look **before** new screens are built
 2. **Logo and brand.**
    - Create the PocketPlan logo as SVG: a symbol and a "PocketPlan" wordmark, with light and dark versions.
    - Use it in the app header, Sign In and Register, and the browser tab icon.
-   - Export app icons now (192, 512, maskable, Apple touch). They're needed in Step 20.
+   - Export app icons now (192, 512, maskable, Apple touch). They're needed in Step 21.
 3. **Visual consistency.**
    - One set of colour, spacing, corner-radius, and font tokens in `globals.css`; remove one-off values.
    - Shared components for buttons, inputs, cards, sheets, empty states, and loading skeletons, used everywhere.

@@ -24,9 +24,9 @@ Every step's "Done when" list includes: *"Bugs found during this step fixed and 
 | # | Item | Fix by |
 |---|---|---|
 | K1 | The API `lint` script runs with `--fix`, so it changes files. Add a check-only script for CI. | Any time |
-| K2 | `test/app.e2e-spec.ts` isn't part of `npm run test:e2e`. Include it, or document that it needs a database. | Any time / Step 22 |
-| K3 | The API falls back to a development secret when `JWT_SECRET` isn't set. It must refuse to start in production. | Before Step 22 |
-| K4 | `POST /balances/preview` doesn't require sign-in (demo only). | Step 16 |
+| K2 | `test/app.e2e-spec.ts` isn't part of `npm run test:e2e`. Include it once tests run against a database. | Step 11 |
+| K3 | The API falls back to a development secret when `JWT_SECRET` isn't set. Goes away when sign-in moves to Supabase Auth. | Step 11 |
+| K4 | `POST /balances/preview` doesn't require sign-in (demo only). | Step 17 |
 
 ## Risk checklist (check whenever a step touches the area)
 
@@ -34,7 +34,8 @@ Every step's "Done when" list includes: *"Bugs found during this step fixed and 
 - **Money:** decimal amounts stay exact through add, edit, totals, budgets, and splits.
 - **Expired sign-in:** an expired token, or a password changed elsewhere, sends you to Sign In instead of showing broken pages.
 - **API down:** a clear error and a Retry option on every screen.
-- **Two writes at once:** the JSON-file storage doesn't lose or corrupt data on simultaneous saves (e.g. a double-tap on Save).
+- **Two writes at once:** simultaneous saves (e.g. a double-tap on Save) don't lose or duplicate data. From Step 11, multi-table writes use database transactions.
+- **Half-saved data:** a failed multi-table write (e.g. a split expense, a confirmed recurring expense) leaves nothing half-saved.
 - **Deleted references:** an expense whose wallet, category, or group member no longer exists.
 - **Empty states:** a brand-new account on every screen.
 - **Form checks:** zero, negative, or very large amounts; long text; blank names.
@@ -47,6 +48,8 @@ Every step's "Done when" list includes: *"Bugs found during this step fixed and 
 | B1 | 10 | Sign-in / every page | When the API couldn't be reached on page load, the app sent a signed-in user to Sign In with no explanation (the saved session was kept, but it looked like a sign-out). Now shows "Can't reach PocketPlan" with **Try again** and **Sign out**; only a rejected token (401) signs the user out. | Medium | Fixed | Step 10 (`lib/auth.tsx`, `RequireAuth.tsx`) |
 | B2 | 10 | Expenses: category filters | A grey horizontal scrollbar showed under the category filter chips on Windows. Hidden; the row still scrolls. | Low | Fixed | Step 10 |
 | B4 | 10 | Whole app on desktop | Every page was locked to a 672px phone-width column (`max-w-2xl` in `AppShell` and `GroupScreen`), leaving large empty areas on desktop. Now: phones unchanged (bottom tab bar); tablets use the full width; desktop (≥1024px) has a sidebar and a content area up to 1280px, with two-column layouts on Home, Budgets, Profile, and the group Balances tab. | Medium | Fixed | Step 10 |
+| B6 | 11 | Sign-in security | The Supabase session (access and refresh token) was stored in `localStorage`, readable by any script on the page (XSS risk). Moved to HttpOnly cookies set by the Next.js server; API calls go through a server-side pass-through; same-origin check on all state-changing routes. | High | Fixed | Step 11 |
+| B5 | 11 | Sign In / Register / Reset password | When Supabase accepted the password but the PocketPlan API was down (or rejected the session), the button spun "Signing in…" forever. Now the form stops and says the server isn't responding (or asks to sign in again). | Medium | Fixed | Step 11 (`lib/auth.tsx`) |
 | B3 | 10 | Empty states | The planned "receipt" icon showed a **$** sign in a ৳ app. Switched to `ReceiptText`. | Low | Fixed | Step 10 |
 
 **Severity:** High = wrong money, data loss, or a security problem · Medium = a feature broken but there's a workaround · Low = cosmetic.

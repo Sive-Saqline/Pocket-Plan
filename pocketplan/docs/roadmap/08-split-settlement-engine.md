@@ -9,5 +9,5 @@
 - Web demo at `/groups/demo`: Balances, Expenses, and Members tabs, Settle with Undo, Add Expense (Everyone / Choose people / Just the payer). The group is stored in the browser.
 
 ## Known gaps (picked up later)
-- Real groups saved on the server, linked to real user accounts: Steps 14–16.
-- `/balances/preview` needs to be protected by sign-in or replaced: Step 16.
+- Real groups saved on the server, linked to real user accounts: Steps 15–17.
+- `/balances/preview` needs to be protected by sign-in or replaced: Step 17.

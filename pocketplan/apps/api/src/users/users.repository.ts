@@ -5,18 +5,18 @@ export interface Preferences {
   theme: Theme;
 }
 
-export interface StoredUser {
+/**
+ * A PocketPlan profile (the `users` table). Accounts themselves (email,
+ * password, sessions) live in Supabase Auth; the profile row is created by the
+ * on_auth_user_created trigger when someone signs up.
+ */
+export interface UserProfile {
   id: string;
   name: string;
   email: string;
-  passwordHash: string;
   createdAt: string;
-  /** Missing on accounts created before preferences existed. */
-  preferences?: Partial<Preferences>;
-  /** Unix seconds; tokens issued before this are rejected. */
-  passwordChangedAt?: number;
-  /** Profile photo as a validated data URL (see avatar.ts); null or missing = none. */
-  avatar?: string | null;
+  theme: Theme;
+  avatarUrl: string | null;
 }
 
 export interface PublicUser {
@@ -29,34 +29,30 @@ export interface PublicUser {
   avatarUrl: string | null;
 }
 
-export type UserUpdate = Partial<
-  Pick<StoredUser, 'name' | 'passwordHash' | 'passwordChangedAt' | 'avatar'>
-> & { preferences?: Partial<Preferences> };
-
-export class EmailTakenError extends Error {}
-
-/**
- * Storage seam for accounts. The file-backed implementation keeps demos
- * working without a database; swap in a Prisma/Supabase one later.
- */
-export abstract class UsersRepository {
-  abstract findByEmail(email: string): Promise<StoredUser | null>;
-  abstract findById(id: string): Promise<StoredUser | null>;
-  /** Throws EmailTakenError if the email is already registered. */
-  abstract create(
-    user: Omit<StoredUser, 'id' | 'createdAt'>,
-  ): Promise<StoredUser>;
-  /** Merges `update` into the user (preferences merge key by key); null if not found. */
-  abstract update(id: string, update: UserUpdate): Promise<StoredUser | null>;
+/** Fields left out (undefined) stay as they are; avatarUrl null removes the photo. */
+export interface ProfileUpdate {
+  name?: string;
+  theme?: Theme;
+  avatarUrl?: string | null;
 }
 
-export function toPublicUser(user: StoredUser): PublicUser {
+/** Storage seam for profiles: Prisma in the app, in-memory in tests. */
+export abstract class UsersRepository {
+  abstract findById(id: string): Promise<UserProfile | null>;
+  /** Returns the updated profile, or null if there is no such user. */
+  abstract update(
+    id: string,
+    update: ProfileUpdate,
+  ): Promise<UserProfile | null>;
+}
+
+export function toPublicUser(user: UserProfile): PublicUser {
   return {
     id: user.id,
     name: user.name,
     email: user.email,
     createdAt: user.createdAt,
-    preferences: { theme: user.preferences?.theme ?? 'system' },
-    avatarUrl: user.avatar ?? null,
+    preferences: { theme: user.theme },
+    avatarUrl: user.avatarUrl,
   };
 }

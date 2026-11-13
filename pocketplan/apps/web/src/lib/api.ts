@@ -1,7 +1,12 @@
 import type { Group } from "./group";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
-const TIMEOUT_MS = 8000;
+/**
+ * API calls go to our own server first (/api/pp → app/api/pp/[...path]),
+ * which adds the sign-in token from HttpOnly cookies. Page scripts never see
+ * a token. Sign-in actions use /api/auth/* (see authRequest).
+ */
+const API_BASE = "/api/pp";
+const TIMEOUT_MS = 25_000; // the remote database can take a couple of seconds
 
 export class ApiError extends Error {
   constructor(
@@ -15,24 +20,27 @@ export class ApiError extends Error {
 export interface RequestOptions {
   method?: string;
   body?: unknown;
-  token?: string | null;
   signal?: AbortSignal;
 }
 
 /** JSON request to the PocketPlan API; throws ApiError with a user-facing message. */
-export async function apiRequest<T>(
-  path: string,
-  { method = "GET", body, token, signal }: RequestOptions = {},
-): Promise<T> {
+export function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  return send<T>(`${API_BASE}${path}`, options);
+}
+
+/** POST to a sign-in action in app/api/auth/[action]. */
+export function authRequest<T>(action: string, body: unknown = {}): Promise<T> {
+  return send<T>(`/api/auth/${action}`, { method: "POST", body });
+}
+
+async function send<T>(url: string, { method = "GET", body, signal }: RequestOptions = {}): Promise<T> {
   const timeout = AbortSignal.timeout(TIMEOUT_MS);
   let res: Response;
   try {
-    res = await fetch(`${API_URL}${path}`, {
+    res = await fetch(url, {
       method,
-      headers: {
-        ...(body !== undefined && { "Content-Type": "application/json" }),
-        ...(token && { Authorization: `Bearer ${token}` }),
-      },
+      credentials: "same-origin",
+      headers: body !== undefined ? { "Content-Type": "application/json" } : undefined,
       body: body === undefined ? undefined : JSON.stringify(body),
       signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
     });

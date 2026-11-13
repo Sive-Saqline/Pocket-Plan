@@ -1,6 +1,6 @@
-# Step 18: Smart checks: unusual, duplicate & repeating expenses
+# Step 19: Smart checks: unusual, duplicate & repeating expenses
 
-**Status:** ⏳ Not started · **PRD:** 6.17, 6.18 · **Depends on:** Step 17
+**Status:** ⏳ Not started · **PRD:** 6.17, 6.18 · **Depends on:** Step 18
 
 ## Goal
 Point out expenses that look wrong or repeat. These checks are plain statistics: **no AI call** is needed.
@@ -9,8 +9,9 @@ Point out expenses that look wrong or repeat. These checks are plain statistics:
 1. **Unusual amount:** flag an expense far outside that category's recent range (e.g. compared with the median of the last 3 months).
 2. **Possible duplicate:** in a group, two expenses with the same amount, close in time, and with a similar description (e.g. two members logged the same purchase). **Only flag it; never delete.** The user decides.
 3. **Repeating expense:** the same category, a similar amount, and the same payer for several periods in a row, with no recurring template → suggest "Turn this into a recurring expense?" Saying no changes nothing.
-4. **Web:** small flags on affected expenses and a suggestions card on Home. Each can be dismissed, and a dismissed suggestion stays hidden.
-5. Unit tests for each rule, including cases that must **not** be flagged.
+4. **Remember dismissals:** a dismissed flag or suggestion stays hidden. Store that in the database (new table, with a migration), not in the browser.
+5. **Web:** small flags on affected expenses and a suggestions card on Home.
+6. Unit tests for each rule, including cases that must **not** be flagged.
 
 ## Done when
 - [ ] All three checks work on personal and group data

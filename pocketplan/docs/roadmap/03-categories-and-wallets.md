@@ -9,6 +9,6 @@
 - Add a wallet straight from the Add Expense sheet.
 
 ## Known gaps (picked up later)
-- Editing, deleting, and setting a balance on a wallet: Step 11.
+- Editing, deleting, and setting a balance on a wallet: Step 12.
 - Category icons are emojis: Step 10.
-- Custom categories (PRD 6.3) aren't built yet: Step 11.
+- Custom categories (PRD 6.3) aren't built yet: Step 12.

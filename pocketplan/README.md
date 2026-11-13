@@ -13,7 +13,7 @@ Collaborative expense & budgeting app. Requirements: [docs/PocketPlan-PRD-v4.md]
 2. Create a Supabase project, then copy the env files and fill them in:
    - `apps/api/.env.example` → `apps/api/.env`
    - `apps/web/.env.example` → `apps/web/.env.local`
-3. `npm run db:migrate` — creates the schema in Supabase
+3. `npm run db:migrate`: applies the migrations in `apps/api/prisma/migrations/` to Supabase (tables, data rules, the sign-up trigger, and row-level security). It runs `prisma migrate deploy`; `prisma migrate dev` isn't used, because Supabase doesn't allow its temporary "shadow" database.
 4. `npm run dev:api` and `npm run dev:web`
 
 The web app always runs on **port 3000** (the API only accepts requests from there). If something else is already using 3000, `dev:web` stops with `EADDRINUSE` instead of quietly moving to another port. Stop the other process first. On Windows, `netstat -ano | findstr :3000` shows its PID.
@@ -27,17 +27,31 @@ The web app always runs on **port 3000** (the API only accepts requests from the
 | `npm run build` | Build both apps |
 | `npm run lint` | Lint both apps |
 | `npm test` | API unit tests |
-| `npm run test:e2e` | API HTTP tests (auth, personal expenses, balances; no database needed) |
+| `npm run test:e2e` | API HTTP tests (profile, personal expenses, recurring, balances). Supabase is replaced by test stand-ins, so no database or network is needed. |
+| `npm run db:migrate` | Apply new migrations to Supabase |
 | `npm run db:studio` | Browse the database in Prisma Studio |
+
+### Adding a database change
+
+1. Edit `apps/api/prisma/schema.prisma`.
+2. Generate the SQL for just that change into a new, timestamped folder (from `apps/api`):
+   `npx prisma migrate diff --from-url "$DIRECT_URL" --to-schema-datamodel prisma/schema.prisma --script > prisma/migrations/<yyyymmddhhmmss>_<name>/migration.sql`
+3. Add any CHECK rules or row-level-security policies for new tables to that file by hand.
+4. `npm run db:migrate`, then `npm run db:generate` (stop the API first on Windows, or the engine file is locked).
 
 ## Accounts (sign up / sign in)
 
-Open http://localhost:3000. You land on **Sign In**; use **Create an account** to register. Every page requires sign-in and returns you to the page you asked for afterwards.
+Sign-in runs on **Supabase Auth**; all data is stored in Supabase (PostgreSQL) through the API.
 
-- API: `POST /auth/register`, `POST /auth/login` (return a 7-day JWT) and `GET /auth/me` (Bearer token).
-- Passwords are bcrypt-hashed. Wrong password and unknown email give the same error.
-- **Demo storage:** accounts live in `apps/api/.data/users.json` (git-ignored) behind a `UsersRepository` interface, until the Supabase work replaces it. Delete that file to wipe all accounts (restart the API afterwards).
-- Set `JWT_SECRET` in `apps/api/.env` for anything beyond local demos; the API warns when it falls back to a dev secret.
+- **Register** sends a confirmation email (email confirmation is on). After clicking the link you can sign in. Signing up creates your profile, the 9 default categories and a Cash wallet (database trigger `on_auth_user_created`).
+- **Forgot password?** on Sign In emails a reset link that opens `/reset-password`.
+- **Change password** (Profile) checks your current password and signs out your other devices.
+- **Where the session lives:** only in **HttpOnly cookies** (`SameSite=Lax`, `Secure` in production). Page JavaScript can't read them, so an injected script can't steal the session. Nothing is kept in `localStorage`.
+  - Sign-in actions run on the Next.js server: `app/api/auth/[action]` (login, register, logout, forgot-password, reset-password, change-password). Email links come back through `app/auth/callback`.
+  - The browser calls the API through `app/api/pp/[...path]`, which reads the cookie, renews the token when needed and adds `Authorization: Bearer …`. The API checks the token against the project's public signing keys (no JWT secret needed).
+  - State-changing requests must come from the app's own origin (CSRF protection).
+- API: `GET|PATCH /auth/me`, `PUT|DELETE /auth/me/avatar`. There are no register, login or password routes in the API any more.
+- Supabase dashboard settings: **Authentication → URL Configuration**: Site URL `http://localhost:3000`, Redirect URLs `http://localhost:3000/**`.
 
 ## Personal expenses
 
@@ -45,7 +59,7 @@ Signed-in users get a **Home** dashboard (this month vs last, spending by catego
 
 - API (all require sign-in, all scoped to the signed-in user): `GET /categories`, `GET|POST /accounts`, `GET|POST /expenses`, `PATCH|DELETE /expenses/:id`, `POST /expenses/sample-data`, `GET /reports/summary?month=YYYY-MM`.
 - New users get the 9 default categories (PRD §6.3) and a Cash wallet.
-- **Demo storage:** one JSON file per user in `apps/api/.data/ledger/`, behind a `LedgerStore` interface, until the database work lands.
+- **Storage:** Supabase tables `accounts`, `categories`, `expenses`, `budgets`, `recurring_expenses` (through `PrismaLedgerStore`). API tests use temporary JSON files instead, so they need no database.
 
 ## Budgets
 
@@ -66,7 +80,7 @@ Signed-in users get a **Home** dashboard (this month vs last, spending by catego
 Tap your avatar (top right), or **More → Profile & settings**: **add, change or remove a profile photo** (JPG, PNG or WebP; cropped to a square and shrunk in the browser before upload), edit your name (email is read-only), pick a **System / Light / Dark** theme (saved to your account, applied before first paint so it never flashes), **change password** (other devices are signed out; this one stays signed in), and **Sign out**.
 
 - API: `PATCH /auth/me` (`name`, `preferences.theme`), `POST /auth/change-password`, `PUT /auth/me/avatar` (`{ image: "data:image/jpeg;base64,…" }`) and `DELETE /auth/me/avatar`. The API checks the image's real file type and caps it at 64 KB; `GET /auth/me` returns it as `avatarUrl`.
-- **Demo storage:** the photo is kept on the user record in `users.json` until Step 22 moves it to Supabase Storage.
+- **Storage:** photos are in the public Supabase Storage bucket `avatars` (random file names; only the API can upload or delete).
 
 ## Demo: split & settlement engine (no database needed)
 

@@ -10,5 +10,5 @@
 - Users stored in `apps/api/.data/users.json` behind the `UsersRepository` interface.
 
 ## Known gaps (picked up later)
-- The PRD asks for **Supabase Auth**. Switching happens in Step 22.
-- Password reset is not built. It comes with Supabase Auth in Step 22.
+- The PRD asks for **Supabase Auth**. Switching happens in Step 11.
+- Password reset is not built. It comes with Supabase Auth in Step 11.

@@ -1,6 +1,8 @@
 "use client";
 
+import { MailCheck } from "lucide-react";
 import Link from "next/link";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { ApiError } from "@/lib/api";
@@ -23,6 +25,7 @@ export function RegisterForm() {
   const [errors, setErrors] = useState<Partial<Record<Field, string>>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [sentTo, setSentTo] = useState<string | null>(null);
 
   useEffect(() => {
     if (state.status === "authenticated") router.replace(returnTo);
@@ -50,7 +53,11 @@ export function RegisterForm() {
 
     setBusy(true);
     try {
-      await register(values.name.trim(), values.email.trim(), values.password);
+      const { needsEmailConfirmation } = await register(values.name.trim(), values.email.trim(), values.password);
+      if (needsEmailConfirmation) {
+        setSentTo(values.email.trim());
+        setBusy(false);
+      }
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
         setErrors({ email: err.message });
@@ -59,6 +66,34 @@ export function RegisterForm() {
       }
       setBusy(false);
     }
+  }
+
+  if (sentTo) {
+    return (
+      <AuthShell
+        title="Check your email"
+        subtitle="One more step to finish creating your account."
+        footer={
+          <>
+            Confirmed already?{" "}
+            <Link href={loginHref} className="font-semibold text-accent hover:underline">
+              Sign in
+            </Link>
+          </>
+        }
+      >
+        <EmptyState
+          icon={MailCheck}
+          title="Confirm your email address"
+          text={
+            <>
+              We sent a link to <strong className="text-text">{sentTo}</strong>. Open it to confirm your account,
+              then sign in. No email? Check your spam folder.
+            </>
+          }
+        />
+      </AuthShell>
+    );
   }
 
   return (

@@ -9,5 +9,5 @@
 - `.env.example` files for both apps.
 
 ## Known gaps (picked up later)
-- No Supabase project connected yet: Step 22.
+- No Supabase project connected yet: Step 11.
 - `apps/web/public/` is empty (no logo or app icons): Step 10.

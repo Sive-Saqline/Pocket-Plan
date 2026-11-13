@@ -1,6 +1,6 @@
-# Step 17: AI: plain-language entry & auto-categorize
+# Step 18: AI: plain-language entry & auto-categorize
 
-**Status:** ⏳ Not started · **PRD:** 6.14, 6.15, 11 · **Depends on:** Step 16
+**Status:** ⏳ Not started · **PRD:** 6.14, 6.15, 11 · **Depends on:** Step 17
 
 ## Goal
 Add an expense by typing a sentence, and get a suggested category for typed descriptions.

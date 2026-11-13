@@ -9,4 +9,4 @@
 - Each user's data is stored in `apps/api/.data/ledger/<userId>.json` behind the `LedgerStore` interface.
 
 ## Known gaps (picked up later)
-- The `groupId` and `paidBy` fields from PRD 6.6: Step 15.
+- The `groupId` and `paidBy` fields from PRD 6.6: Step 16.
