@@ -15,7 +15,7 @@ export function useToast() {
 
 export function Toast({ message }: { message: string | null }) {
   return (
-    <div aria-live="polite" className="pointer-events-none fixed inset-x-4 bottom-36 z-30 flex justify-center">
+    <div aria-live="polite" className="pointer-events-none fixed inset-x-4 bottom-36 z-30 flex justify-center lg:bottom-10 lg:left-64">
       {message && (
         <p className="max-w-sm rounded-lg bg-text px-4 py-3 text-sm text-surface shadow-lg">{message}</p>
       )}

@@ -1,3 +1,4 @@
+import { TriangleAlert } from "lucide-react";
 import type { BudgetStatus } from "@/lib/ledger";
 import { formatTaka } from "@/lib/money";
 
@@ -43,16 +44,16 @@ export function BudgetBar({
 export function BudgetLabel({ status, remaining, percent }: { status: BudgetStatus; remaining: number; percent: number }) {
   if (status === "over") {
     return (
-      <span className="font-medium text-danger">
-        <span aria-hidden>⚠ </span>
+      <span className="inline-flex items-center gap-1 font-medium text-danger">
+        <TriangleAlert aria-hidden size={14} className="shrink-0" />
         {remaining === 0 ? "Budget used up" : `Over by ${formatTaka(-remaining)}`} · {percent}%
       </span>
     );
   }
   if (status === "near") {
     return (
-      <span className="font-medium text-[color-mix(in_srgb,var(--warning)_75%,var(--text))]">
-        <span aria-hidden>● </span>
+      <span className="inline-flex items-center gap-1.5 font-medium text-[color-mix(in_srgb,var(--warning)_75%,var(--text))]">
+        <StatusDot className="bg-warning" />
         Nearly there · {formatTaka(remaining)} left · {percent}%
       </span>
     );
@@ -62,4 +63,9 @@ export function BudgetLabel({ status, remaining, percent }: { status: BudgetStat
       {formatTaka(remaining)} left · {percent}%
     </span>
   );
+}
+
+/** Small coloured dot shown next to a text label (never on its own). */
+export function StatusDot({ className }: { className: string }) {
+  return <span aria-hidden className={`inline-block size-2 shrink-0 rounded-full ${className}`} />;
 }

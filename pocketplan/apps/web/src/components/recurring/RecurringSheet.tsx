@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { CategoryPicker, inputClass, WalletPicker } from "@/components/expenses/Pickers";
+import { CloseButton } from "@/components/ui/CloseButton";
 import { ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { isoDate } from "@/lib/dates";
@@ -128,14 +129,7 @@ export function RecurringSheet({
           <h2 id="recurring-sheet-title" className="text-xl font-semibold">
             {template ? "Edit recurring expense" : "New recurring expense"}
           </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            className="grid size-11 place-items-center rounded-lg text-xl text-text-muted hover:bg-surface-muted"
-          >
-            ×
-          </button>
+          <CloseButton onClick={onClose} />
         </header>
 
         {formError && (

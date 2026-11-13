@@ -1,18 +1,22 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
+import { Camera, ImagePlus, Monitor, Moon, Sun, Trash2, type LucideIcon } from "lucide-react";
 import { AppShell } from "@/components/app/AppShell";
 import { TextField } from "@/components/auth/TextField";
+import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Toast, useToast } from "@/components/ui/Toast";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 import { ApiError } from "@/lib/api";
 import { useAuth, type AuthResult, type User } from "@/lib/auth";
+import { AVATAR_ACCEPT, AvatarFileError, prepareAvatar } from "@/lib/avatar";
 import { applyTheme, type Theme } from "@/lib/theme";
 
-const themes: { value: Theme; label: string; icon: string }[] = [
-  { value: "system", label: "System", icon: "🖥️" },
-  { value: "light", label: "Light", icon: "☀️" },
-  { value: "dark", label: "Dark", icon: "🌙" },
+const themes: { value: Theme; label: string; icon: LucideIcon }[] = [
+  { value: "system", label: "System", icon: Monitor },
+  { value: "light", label: "Light", icon: Sun },
+  { value: "dark", label: "Dark", icon: Moon },
 ];
 
 const errorText = (err: unknown, fallback: string) => (err instanceof ApiError ? err.message : fallback);
@@ -24,13 +28,79 @@ export function ProfileScreen() {
 
   return (
     <AppShell title="Profile">
-      <section className="flex items-center gap-4 rounded-xl bg-surface p-4 shadow-card">
-        <span
-          aria-hidden
-          className="grid size-16 shrink-0 place-items-center rounded-full bg-accent text-2xl font-semibold text-text-inverse"
-        >
-          {user.name.charAt(0).toUpperCase()}
-        </span>
+      <ProfileHeader user={user} onMessage={toast.show} />
+
+      {/* Desktop: details and theme on the left, password on the right. */}
+      <div className="grid gap-4 lg:grid-cols-2 lg:items-start lg:gap-6">
+        <div className="flex flex-col gap-4 lg:gap-6">
+          <DetailsCard user={user} onSaved={() => toast.show("Profile updated")} />
+          <ThemeCard user={user} onError={toast.show} />
+        </div>
+        <PasswordCard onChanged={() => toast.show("Password changed. Other devices have been signed out.")} />
+      </div>
+
+      <button
+        type="button"
+        onClick={logout}
+        className="h-13 rounded-xl border border-border bg-surface font-semibold text-danger shadow-card hover:bg-danger/10 lg:w-60 lg:self-start"
+      >
+        Sign out
+      </button>
+
+      <Toast message={toast.message} />
+    </AppShell>
+  );
+}
+
+/** Photo, name and email, with Add/Change photo and Remove. */
+function ProfileHeader({ user, onMessage }: { user: User; onMessage: (message: string) => void }) {
+  const { request, setUser } = useAuth();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState<"upload" | "remove" | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function upload(file: File) {
+    setError(null);
+    setBusy("upload");
+    try {
+      const image = await prepareAvatar(file);
+      setUser(await request<User>("/auth/me/avatar", { method: "PUT", body: { image } }));
+      onMessage("Profile photo updated");
+    } catch (err) {
+      setError(err instanceof AvatarFileError ? err.message : errorText(err, "Couldn't upload the photo. Try again."));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function remove() {
+    setError(null);
+    setBusy("remove");
+    try {
+      setUser(await request<User>("/auth/me/avatar", { method: "DELETE" }));
+      onMessage("Profile photo removed");
+    } catch (err) {
+      setError(errorText(err, "Couldn't remove the photo. Try again."));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <section className="flex flex-col gap-4 rounded-xl bg-surface p-4 shadow-card sm:flex-row sm:items-center">
+      <div className="flex min-w-0 flex-1 items-center gap-4">
+        <div className="relative shrink-0">
+          <UserAvatar name={user.name} avatarUrl={user.avatarUrl} className="size-20 text-3xl" />
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            disabled={busy !== null}
+            aria-label={user.avatarUrl ? "Change profile photo" : "Add profile photo"}
+            className="absolute -right-1 -bottom-1 grid size-8 place-items-center rounded-full border-2 border-surface bg-accent text-text-inverse hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-60"
+          >
+            <Camera aria-hidden size={16} />
+          </button>
+        </div>
         <div className="min-w-0">
           <p className="truncate text-xl font-semibold">{user.name}</p>
           <p className="truncate text-text-muted">{user.email}</p>
@@ -39,22 +109,43 @@ export function ProfileScreen() {
             {new Date(user.createdAt).toLocaleDateString("en-GB", { month: "long", year: "numeric" })}
           </p>
         </div>
-      </section>
+      </div>
 
-      <DetailsCard user={user} onSaved={() => toast.show("Profile updated")} />
-      <ThemeCard user={user} onError={toast.show} />
-      <PasswordCard onChanged={() => toast.show("Password changed. Other devices have been signed out.")} />
+      <div className="flex flex-col gap-1.5 sm:items-end">
+        <div className="flex gap-2">
+          <Button variant="secondary" size="sm" onClick={() => fileRef.current?.click()} disabled={busy !== null}>
+            <ImagePlus aria-hidden size={16} />
+            {busy === "upload" ? "Uploading…" : user.avatarUrl ? "Change photo" : "Add photo"}
+          </Button>
+          {user.avatarUrl && (
+            <Button variant="ghost" size="sm" onClick={remove} disabled={busy !== null}>
+              <Trash2 aria-hidden size={16} />
+              {busy === "remove" ? "Removing…" : "Remove"}
+            </Button>
+          )}
+        </div>
+        <p className="text-xs text-text-muted">JPG, PNG or WebP. We crop it to a square.</p>
+        {error && (
+          <p role="alert" className="text-sm text-danger">
+            {error}
+          </p>
+        )}
+      </div>
 
-      <button
-        type="button"
-        onClick={logout}
-        className="h-13 rounded-xl border border-border bg-surface font-semibold text-danger shadow-card hover:bg-danger/10"
-      >
-        Sign out
-      </button>
-
-      <Toast message={toast.message} />
-    </AppShell>
+      <input
+        ref={fileRef}
+        type="file"
+        accept={AVATAR_ACCEPT}
+        className="sr-only"
+        tabIndex={-1}
+        aria-hidden
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          e.target.value = ""; // so choosing the same file again still triggers a change
+          if (file) void upload(file);
+        }}
+      />
+    </section>
   );
 }
 
@@ -148,9 +239,7 @@ function ThemeCard({ user, onError }: { user: User; onError: (message: string) =
                 on ? "border-accent bg-accent/10 text-accent ring-1 ring-accent" : "border-border hover:bg-surface-muted"
               }`}
             >
-              <span aria-hidden className="text-lg">
-                {t.icon}
-              </span>
+              <t.icon aria-hidden size={20} strokeWidth={1.75} />
               {t.label}
             </button>
           );

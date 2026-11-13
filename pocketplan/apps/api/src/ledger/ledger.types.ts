@@ -12,6 +12,7 @@ export type AccountType = (typeof ACCOUNT_TYPES)[number];
 export interface Category {
   id: string;
   name: string;
+  /** Icon key, e.g. "food". Accounts created before Step 10 may hold an emoji. */
   icon: string;
   createdAt: string;
 }

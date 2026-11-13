@@ -1,6 +1,8 @@
 "use client";
 
+import { ArrowRight, BellRing } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/Button";
 import type { RecurringExpense } from "@/lib/ledger";
 import { formatTaka } from "@/lib/money";
 
@@ -30,8 +32,8 @@ export function DueRecurringBanner({ due, onReview }: { due: RecurringExpense[];
       className="flex flex-col gap-3 rounded-xl border border-warning/60 bg-warning/15 p-4 sm:flex-row sm:items-center"
     >
       <div className="flex flex-1 gap-3">
-        <span aria-hidden className="grid size-9 shrink-0 place-items-center rounded-full bg-warning font-bold text-[#0f1b1f]">
-          !
+        <span aria-hidden className="grid size-9 shrink-0 place-items-center rounded-full bg-warning text-[#0f1b1f]">
+          <BellRing size={18} />
         </span>
         <div className="min-w-0">
           <p className="font-semibold">
@@ -59,13 +61,10 @@ export function DueRecurringBanner({ due, onReview }: { due: RecurringExpense[];
         >
           Not now
         </button>
-        <button
-          type="button"
-          onClick={onReview}
-          className="h-11 flex-1 rounded-lg bg-accent px-4 text-sm font-semibold text-text-inverse hover:bg-accent-hover sm:flex-none"
-        >
-          Review →
-        </button>
+        <Button onClick={onReview} className="flex-1 text-sm sm:flex-none">
+          Review
+          <ArrowRight aria-hidden size={16} />
+        </Button>
       </div>
     </section>
   );

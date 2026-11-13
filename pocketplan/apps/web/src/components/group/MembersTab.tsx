@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import type { Group } from "@/lib/group";
 import { Avatar } from "./Avatar";
-import { Card } from "./Card";
+import { Card } from "@/components/ui/Card";
 
 export function MembersTab({
   group,

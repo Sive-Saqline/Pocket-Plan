@@ -2,17 +2,18 @@ import { randomUUID } from 'node:crypto';
 import { AccountType, UserLedger } from './ledger.types';
 import { Frequency, occurrence } from './schedule';
 
-// PRD §6.3 defaults, icons from mock-02-add-expense.
+// PRD §6.3 defaults. `icon` is a key the web app maps to an icon
+// (apps/web/src/components/ui/icons.tsx); older accounts may still hold emojis.
 const DEFAULT_CATEGORIES: [string, string][] = [
-  ['Food', '🍔'],
-  ['Transport', '🚗'],
-  ['Bills', '🧾'],
-  ['Shopping', '🛍️'],
-  ['Health', '⚕️'],
-  ['Education', '🎒'],
-  ['Entertainment', '🎬'],
-  ['Savings', '💰'],
-  ['Miscellaneous', '📦'],
+  ['Food', 'food'],
+  ['Transport', 'transport'],
+  ['Bills', 'bills'],
+  ['Shopping', 'shopping'],
+  ['Health', 'health'],
+  ['Education', 'education'],
+  ['Entertainment', 'entertainment'],
+  ['Savings', 'savings'],
+  ['Miscellaneous', 'misc'],
 ];
 
 export function newLedger(now = new Date().toISOString()): UserLedger {

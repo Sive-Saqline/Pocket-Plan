@@ -1,6 +1,9 @@
 "use client";
 
+import { Check } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { inputClass } from "@/components/expenses/Pickers";
+import { CloseButton } from "@/components/ui/CloseButton";
 import type { GroupExpense, Member } from "@/lib/group";
 import { formatTaka, parseTaka } from "@/lib/money";
 
@@ -71,9 +74,6 @@ export function AddExpenseSheet({
     onSave({ description: description.trim(), amount: parsed, paidBy, participants: ordered });
   }
 
-  const inputClass =
-    "h-12 w-full rounded-lg border border-border bg-surface px-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent aria-[invalid=true]:border-danger";
-
   return (
     <dialog
       ref={dialogRef}
@@ -86,14 +86,7 @@ export function AddExpenseSheet({
           <h2 id="add-expense-title" className="text-xl font-semibold">
             Add shared expense
           </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            className="grid size-11 place-items-center rounded-lg text-xl text-text-muted hover:bg-surface-muted"
-          >
-            ×
-          </button>
+          <CloseButton onClick={onClose} />
         </header>
 
         <Field id="exp-desc" label="Description" error={errors.description}>
@@ -185,13 +178,13 @@ export function AddExpenseSheet({
                       setChosen((c) => (on ? c.filter((id) => id !== m.id) : [...c, m.id]));
                       clearError("split");
                     }}
-                    className={`h-11 rounded-full border px-4 text-sm font-medium ${
+                    className={`inline-flex h-11 items-center gap-1.5 rounded-full border px-4 text-sm font-medium ${
                       on
                         ? "border-accent bg-accent text-text-inverse"
                         : "border-border bg-surface text-text"
                     }`}
                   >
-                    {on && <span aria-hidden>✓ </span>}
+                    {on && <Check aria-hidden size={16} />}
                     {m.name}
                   </button>
                 );

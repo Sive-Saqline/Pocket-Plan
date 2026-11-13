@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronRight, Repeat, UserRound, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { AppShell } from "@/components/app/AppShell";
@@ -15,7 +16,7 @@ export function MoreScreen() {
       <ul className="flex flex-col overflow-hidden rounded-xl bg-surface shadow-card">
         <MoreLink
           href="/recurring"
-          icon="🔁"
+          icon={Repeat}
           title="Recurring expenses"
           detail={
             data === null
@@ -32,7 +33,7 @@ export function MoreScreen() {
             )
           }
         />
-        <MoreLink href="/profile" icon="👤" title="Profile & settings" detail={state.user?.email ?? ""} />
+        <MoreLink href="/profile" icon={UserRound} title="Profile & settings" detail={state.user?.email ?? ""} />
       </ul>
     </AppShell>
   );
@@ -40,13 +41,13 @@ export function MoreScreen() {
 
 function MoreLink({
   href,
-  icon,
+  icon: Icon,
   title,
   detail,
   badge,
 }: {
   href: string;
-  icon: string;
+  icon: LucideIcon;
   title: string;
   detail: string;
   badge?: ReactNode;
@@ -54,17 +55,15 @@ function MoreLink({
   return (
     <li className="border-b border-border last:border-0">
       <Link href={href} className="flex min-h-16 items-center gap-3 px-4 py-3 hover:bg-surface-muted focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent">
-        <span aria-hidden className="grid size-10 place-items-center rounded-full bg-surface-muted text-lg">
-          {icon}
+        <span aria-hidden className="grid size-10 place-items-center rounded-full bg-accent/10 text-accent">
+          <Icon size={20} strokeWidth={1.75} />
         </span>
         <span className="min-w-0 flex-1">
           <span className="block font-medium">{title}</span>
           <span className="block truncate text-sm text-text-muted">{detail}</span>
         </span>
         {badge}
-        <span aria-hidden className="text-xl text-text-muted">
-          ›
-        </span>
+        <ChevronRight aria-hidden size={20} className="text-text-muted" />
       </Link>
     </li>
   );

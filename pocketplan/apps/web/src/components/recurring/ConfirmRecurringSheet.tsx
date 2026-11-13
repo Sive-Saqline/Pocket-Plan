@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Repeat, TriangleAlert } from "lucide-react";
 import { CategoryPicker, inputClass, WalletPicker } from "@/components/expenses/Pickers";
+import { CloseButton } from "@/components/ui/CloseButton";
 import { ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { dayLabel, isoDate } from "@/lib/dates";
@@ -144,25 +146,18 @@ export function ConfirmRecurringSheet({
                 {current.description}
               </h2>
             </div>
-            <button
-              type="button"
-              onClick={() => dialogRef.current?.close()}
-              aria-label="Close"
-              className="grid size-11 place-items-center rounded-lg text-xl text-text-muted hover:bg-surface-muted"
-            >
-              ×
-            </button>
+            <CloseButton onClick={() => dialogRef.current?.close()} />
           </header>
 
           <p className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-surface-muted px-3 py-2 text-sm">
-            <span>
-              <span aria-hidden>🔁 </span>
+            <span className="inline-flex items-center gap-1.5">
+              <Repeat aria-hidden size={14} />
               {frequencyLabel(current.frequency)}
             </span>
             <span>Due {dayLabel(current.nextDueDate)}</span>
             {current.dueCount > 1 && (
-              <span className="font-medium text-danger">
-                <span aria-hidden>⚠ </span>
+              <span className="inline-flex items-center gap-1.5 font-medium text-danger">
+                <TriangleAlert aria-hidden size={14} />
                 {current.dueCount} occurrences waiting
               </span>
             )}

@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { compare, hash } from 'bcryptjs';
+import { AvatarError, validateAvatar } from '../users/avatar';
 import {
   EmailTakenError,
   PublicUser,
@@ -75,6 +76,23 @@ export class AuthService {
     { name, preferences }: UpdateProfileDto,
   ): Promise<PublicUser> {
     const user = await this.users.update(userId, { name, preferences });
+    if (!user) throw new UnauthorizedException('Session is no longer valid');
+    return toPublicUser(user);
+  }
+
+  /** Sets (image) or removes (null) the profile photo. */
+  async setAvatar(userId: string, image: string | null): Promise<PublicUser> {
+    let avatar: string | null = null;
+    if (image !== null) {
+      try {
+        avatar = validateAvatar(image);
+      } catch (err) {
+        if (err instanceof AvatarError)
+          throw new BadRequestException(err.message);
+        throw err;
+      }
+    }
+    const user = await this.users.update(userId, { avatar });
     if (!user) throw new UnauthorizedException('Session is no longer valid');
     return toPublicUser(user);
   }

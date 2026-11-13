@@ -51,6 +51,7 @@ describe('Auth (e2e)', () => {
       email: 'rafi@example.com',
       createdAt: expect.any(String),
       preferences: { theme: 'system' },
+      avatarUrl: null,
     });
   });
 
@@ -188,6 +189,56 @@ describe('Auth (e2e)', () => {
         .set(authed(token))
         .send({ email: 'new@example.com' })
         .expect(400);
+    });
+
+    it('sets, replaces and removes a profile photo', async () => {
+      const jpeg = `data:image/jpeg;base64,${Buffer.concat([
+        Buffer.from([0xff, 0xd8, 0xff, 0xe0]),
+        Buffer.alloc(64),
+      ]).toString('base64')}`;
+      const set = await http()
+        .put('/auth/me/avatar')
+        .set(authed(token))
+        .send({ image: jpeg })
+        .expect(200);
+      expect(set.body).toMatchObject({ name: 'Rafi', avatarUrl: jpeg });
+      // it comes back on /auth/me, and other profile edits keep it
+      await http()
+        .patch('/auth/me')
+        .set(authed(token))
+        .send({ name: 'Rafi' })
+        .expect(200);
+      const me = await http().get('/auth/me').set(authed(token)).expect(200);
+      expect(me.body.avatarUrl).toBe(jpeg);
+
+      const removed = await http()
+        .delete('/auth/me/avatar')
+        .set(authed(token))
+        .expect(200);
+      expect(removed.body.avatarUrl).toBeNull();
+    });
+
+    it('rejects photos that are not real JPG/PNG/WebP images', async () => {
+      const fakePng = `data:image/png;base64,${Buffer.from('<script>alert(1)</script>').toString('base64')}`;
+      const res = await http()
+        .put('/auth/me/avatar')
+        .set(authed(token))
+        .send({ image: fakePng })
+        .expect(400);
+      expect(res.body.message).toBe("That file isn't a valid image.");
+      await http()
+        .put('/auth/me/avatar')
+        .set(authed(token))
+        .send({ image: 'https://example.com/me.jpg' })
+        .expect(400);
+      await http()
+        .put('/auth/me/avatar')
+        .set(authed(token))
+        .send({})
+        .expect(400);
+      // requires sign-in
+      await http().put('/auth/me/avatar').send({ image: fakePng }).expect(401);
+      await http().delete('/auth/me/avatar').expect(401);
     });
 
     it('checks the current password and rejects reusing it', async () => {

@@ -36,6 +36,8 @@ model User {
   id        String   @id @db.Uuid
   name      String
   email     String   @unique
+  // Profile photo URL. Step 22: a Supabase Storage URL (demo storage keeps a data URL).
+  avatarUrl String?  @map("avatar_url")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 

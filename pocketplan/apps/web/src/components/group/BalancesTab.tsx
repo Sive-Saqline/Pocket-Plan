@@ -2,7 +2,10 @@ import type { BalancePreview } from "@/lib/api";
 import type { Group } from "@/lib/group";
 import { formatTaka } from "@/lib/money";
 import { Avatar } from "./Avatar";
-import { Card } from "./Card";
+import { ArrowRight, Check, CircleCheck } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 type Payment = BalancePreview["payments"][number];
 
@@ -27,7 +30,8 @@ export function BalancesTab({
   if (!preview) return <BalancesSkeleton rows={group.members.length} />;
 
   return (
-    <div className={`flex flex-col gap-3 transition-opacity ${loading ? "opacity-60" : ""}`}>
+    // Desktop: balances | suggested settlements side by side, history underneath.
+    <div className={`grid gap-3 transition-opacity lg:grid-cols-2 lg:items-start lg:gap-6 ${loading ? "opacity-60" : ""}`}>
       <Card title="Member balances">
         <ul className="divide-y divide-border">
           {preview.balances.map((b) => (
@@ -65,13 +69,11 @@ export function BalancesTab({
         }
       >
         {preview.payments.length === 0 ? (
-          <div className="flex flex-col items-center gap-1 py-6 text-center">
-            <span aria-hidden className="text-3xl">
-              🎉
-            </span>
-            <p className="font-medium">Everyone is settled up</p>
-            <p className="text-sm text-text-muted">New shared expenses will show up here.</p>
-          </div>
+          <EmptyState
+            icon={CircleCheck}
+            title="Everyone is settled up"
+            text="New shared expenses will show up here."
+          />
         ) : (
           <>
             <p className="mb-2 text-sm text-text-muted">
@@ -86,23 +88,16 @@ export function BalancesTab({
                 >
                   <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
                     <span className="font-medium">{p.fromName}</span>
-                    <span aria-hidden className="text-text-muted">
-                      →
-                    </span>
+                    <ArrowRight aria-hidden size={16} className="text-text-muted" />
                     <span className="sr-only">pays</span>
                     <span className="font-medium">{p.toName}</span>
                     <span className="w-full font-mono text-lg font-semibold tabular-nums sm:ml-auto sm:w-auto">
                       {formatTaka(p.amount)}
                     </span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => onSettle(p)}
-                    disabled={loading}
-                    className="h-11 shrink-0 rounded-lg bg-accent px-4 font-semibold text-text-inverse hover:bg-accent-hover active:bg-accent-pressed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-                  >
+                  <Button onClick={() => onSettle(p)} disabled={loading} className="shrink-0">
                     Settle
-                  </button>
+                  </Button>
                 </li>
               ))}
             </ul>
@@ -111,12 +106,12 @@ export function BalancesTab({
       </Card>
 
       {group.settlements.length > 0 && (
-        <Card title="Settlement history">
+        <Card title="Settlement history" className="lg:col-span-2">
           <ul className="divide-y divide-border">
             {[...group.settlements].reverse().map((s) => (
               <li key={s.id} className="flex items-center gap-3 py-3">
-                <span aria-hidden className="grid size-10 shrink-0 place-items-center rounded-full bg-surface-muted text-success">
-                  ✓
+                <span aria-hidden className="grid size-10 shrink-0 place-items-center rounded-full bg-success/10 text-success">
+                  <Check size={20} />
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="break-words">

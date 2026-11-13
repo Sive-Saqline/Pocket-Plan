@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { CloseButton } from "@/components/ui/CloseButton";
+import { CategoryBadge } from "@/components/ui/icons";
 import { ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { monthLabel } from "@/lib/dates";
@@ -77,23 +79,14 @@ export function BudgetSheet({
       {line && (
         <form method="post" onSubmit={save} noValidate className="flex flex-col gap-5 p-4 sm:p-6">
           <header className="flex items-center gap-3">
-            <span aria-hidden className="grid size-11 place-items-center rounded-full bg-surface-muted text-xl">
-              {line.icon}
-            </span>
+            <CategoryBadge icon={line.icon} className="size-11" />
             <div className="flex-1">
               <h2 id="budget-sheet-title" className="text-xl font-semibold">
                 {line.name} budget
               </h2>
               <p className="text-sm text-text-muted">{monthLabel(month)}</p>
             </div>
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Close"
-              className="grid size-11 place-items-center rounded-lg text-xl text-text-muted hover:bg-surface-muted"
-            >
-              ×
-            </button>
+            <CloseButton onClick={onClose} />
           </header>
 
           <div>

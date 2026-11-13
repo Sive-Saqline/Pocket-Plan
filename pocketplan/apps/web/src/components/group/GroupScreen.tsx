@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronLeft, House, Plus } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { BalancePreview } from "@/lib/api";
@@ -41,14 +42,15 @@ export function GroupScreen() {
   }
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-2xl flex-col">
-      <header className="sticky top-0 z-10 flex h-14 items-center gap-2 border-b border-border bg-surface/95 px-2 backdrop-blur">
+    <div className="flex min-h-dvh flex-col">
+      <header className="sticky top-0 z-10 border-b border-border bg-surface/95 backdrop-blur">
+        <div className="mx-auto flex h-14 w-full max-w-7xl items-center gap-2 px-2 sm:px-4 lg:h-16 lg:px-6">
         <Link
           href="/"
           aria-label="Back to home"
-          className="grid size-11 place-items-center rounded-lg text-xl hover:bg-surface-muted"
+          className="grid size-11 place-items-center rounded-lg hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-accent"
         >
-          ‹
+          <ChevronLeft aria-hidden size={24} />
         </Link>
         <h1 className="flex-1 truncate font-semibold">{group.name}</h1>
         <button
@@ -61,12 +63,14 @@ export function GroupScreen() {
         >
           Reset demo
         </button>
+        </div>
       </header>
 
-      <main className="flex flex-1 flex-col gap-4 px-4 pt-4 pb-28">
+      <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 px-4 pt-4 pb-28 sm:px-6 lg:gap-6 lg:px-8 lg:pt-6">
+
         <section className="flex items-center gap-3 rounded-xl bg-accent p-4 text-text-inverse shadow-card">
-          <span aria-hidden className="grid size-12 place-items-center rounded-xl bg-white/15 text-2xl">
-            🏠
+          <span aria-hidden className="grid size-12 place-items-center rounded-xl bg-white/15">
+            <House size={24} strokeWidth={1.75} />
           </span>
           <div className="min-w-0 flex-1">
             <p className="text-lg leading-snug font-semibold break-words">{group.name}</p>
@@ -96,7 +100,7 @@ export function GroupScreen() {
           </div>
         )}
 
-        <div role="tablist" aria-label="Group sections" className="grid grid-cols-3 gap-1 rounded-lg bg-surface p-1 shadow-card">
+        <div role="tablist" aria-label="Group sections" className="grid grid-cols-3 gap-1 rounded-lg bg-surface p-1 shadow-card sm:max-w-md">
           {tabs.map((t) => (
             <button
               key={t}
@@ -166,9 +170,9 @@ export function GroupScreen() {
         type="button"
         onClick={() => setAdding(true)}
         aria-label="Add shared expense"
-        className="fixed right-4 bottom-6 grid size-14 place-items-center rounded-full bg-accent text-3xl text-text-inverse shadow-lg hover:bg-accent-hover active:bg-accent-pressed focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent lg:right-[calc(50%-26rem)]"
+        className="fixed right-4 bottom-6 grid size-14 place-items-center rounded-full bg-accent text-text-inverse shadow-lg hover:bg-accent-hover active:bg-accent-pressed focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:right-6 lg:right-8 lg:bottom-8"
       >
-        +
+        <Plus aria-hidden size={28} />
       </button>
 
       <AddExpenseSheet

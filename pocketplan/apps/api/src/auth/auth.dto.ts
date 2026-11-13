@@ -66,6 +66,13 @@ export class UpdateProfileDto {
   preferences?: PreferencesDto;
 }
 
+export class SetAvatarDto {
+  // Content checks (type, signature, size) happen in users/avatar.ts.
+  @IsString()
+  @IsNotEmpty({ message: 'Choose an image' })
+  image: string;
+}
+
 export class ChangePasswordDto {
   @IsString()
   @IsNotEmpty({ message: 'Enter your current password' })

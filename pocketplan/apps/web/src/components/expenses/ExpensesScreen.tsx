@@ -2,7 +2,10 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
+import { ReceiptText } from "lucide-react";
 import { AppShell, Fab } from "@/components/app/AppShell";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { CategoryIcon, categoryIconFor } from "@/components/ui/icons";
 import { Card, ErrorBanner, SkeletonRows } from "@/components/ui/Card";
 import { Toast, useToast } from "@/components/ui/Toast";
 import { MonthSwitcher } from "@/components/ui/MonthSwitcher";
@@ -71,12 +74,13 @@ export function ExpensesScreen() {
         }
       />
 
-      <div role="group" aria-label="Filter by category" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
+      <div role="group" aria-label="Filter by category" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <FilterChip label="All" active={!categoryId} onClick={() => setParams({ category: null })} />
         {personal.categories.map((c) => (
           <FilterChip
             key={c.id}
-            label={`${c.icon} ${c.name}`}
+            label={c.name}
+            icon={c.icon}
             active={c.id === categoryId}
             onClick={() => setParams({ category: c.id === categoryId ? null : c.id })}
           />
@@ -91,17 +95,15 @@ export function ExpensesScreen() {
         </Card>
       ) : days.length === 0 ? (
         <Card>
-          <div className="flex flex-col items-center gap-2 py-8 text-center">
-            <span aria-hidden className="text-3xl">
-              {activeCategory?.icon ?? "🧾"}
-            </span>
-            <p className="font-medium">
-              {activeCategory
+          <EmptyState
+            icon={activeCategory ? categoryIconFor(activeCategory.icon) : ReceiptText}
+            title={
+              activeCategory
                 ? `No ${activeCategory.name} expenses in ${monthLabel(month)}.`
-                : `No expenses in ${monthLabel(month)}.`}
-            </p>
-            <p className="text-sm text-text-muted">Tap + to add one.</p>
-          </div>
+                : `No expenses in ${monthLabel(month)}.`
+            }
+            text="Tap + to add one."
+          />
         </Card>
       ) : (
         <div className={`flex flex-col gap-3 transition-opacity ${expenses.status === "loading" ? "opacity-60" : ""}`}>
@@ -151,16 +153,27 @@ export function ExpensesScreen() {
   );
 }
 
-function FilterChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+function FilterChip({
+  label,
+  icon,
+  active,
+  onClick,
+}: {
+  label: string;
+  icon?: string;
+  active: boolean;
+  onClick: () => void;
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`h-10 shrink-0 rounded-full border px-4 text-sm font-medium whitespace-nowrap ${
+      className={`inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full border px-4 text-sm font-medium whitespace-nowrap ${
         active ? "border-accent bg-accent text-text-inverse" : "border-border bg-surface hover:bg-surface-muted"
       }`}
     >
+      {icon && <CategoryIcon icon={icon} size={16} />}
       {label}
     </button>
   );

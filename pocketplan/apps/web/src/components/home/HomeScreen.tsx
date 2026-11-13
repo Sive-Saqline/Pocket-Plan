@@ -1,7 +1,11 @@
 "use client";
 
+import { ChevronRight, House, ReceiptText, Target } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { CategoryIcon, WalletIcon } from "@/components/ui/icons";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Button } from "@/components/ui/Button";
 import { AppShell, Fab } from "@/components/app/AppShell";
 import { BudgetBar, BudgetLabel } from "@/components/budgets/BudgetBar";
 import { ExpenseRow } from "@/components/expenses/ExpenseRow";
@@ -11,7 +15,7 @@ import { Toast, useToast } from "@/components/ui/Toast";
 import { ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { currentMonth, daysLeft, isoDate, monthLabel } from "@/lib/dates";
-import { walletIcon, type Expense, type MonthSummary } from "@/lib/ledger";
+import type { Expense, MonthSummary } from "@/lib/ledger";
 import { formatTaka } from "@/lib/money";
 import { useApiData } from "@/lib/use-api-data";
 import { usePersonalData } from "@/lib/use-personal-data";
@@ -54,7 +58,7 @@ export function HomeScreen() {
   return (
     <AppShell title="Home">
       <section>
-        <h2 className="text-2xl font-semibold">Hi, {firstName} 👋</h2>
+        <h2 className="text-2xl font-semibold">Hi, {firstName}</h2>
         <p className="text-text-muted">Here&apos;s your {monthLabel(month)} so far.</p>
       </section>
 
@@ -68,39 +72,72 @@ export function HomeScreen() {
         </Card>
       ) : isEmpty ? (
         <Card>
-          <div className="flex flex-col items-center gap-2 py-8 text-center">
-            <span aria-hidden className="text-4xl">
-              🧾
-            </span>
-            <p className="text-lg font-semibold">No expenses yet.</p>
-            <p className="max-w-xs text-sm text-text-muted">
-              Tap + to add your first one, or load a sample month to see how PocketPlan works.
-            </p>
-            <div className="mt-3 flex flex-wrap justify-center gap-2">
-              <button
-                type="button"
-                onClick={() => setSheet({ open: true, expense: null })}
-                className="h-11 rounded-lg bg-accent px-4 font-semibold text-text-inverse hover:bg-accent-hover"
-              >
-                Add expense
-              </button>
-              <button
-                type="button"
-                onClick={loadSample}
-                disabled={seeding}
-                className="h-11 rounded-lg border border-border px-4 font-semibold text-accent hover:bg-surface-muted disabled:opacity-60"
-              >
-                {seeding ? "Loading…" : "Load sample month"}
-              </button>
-            </div>
-          </div>
+          <EmptyState
+            icon={ReceiptText}
+            title="No expenses yet."
+            text="Tap + to add your first one, or load a sample month to see how PocketPlan works."
+          >
+            <Button onClick={() => setSheet({ open: true, expense: null })}>Add expense</Button>
+            <Button variant="secondary" onClick={loadSample} disabled={seeding}>
+              {seeding ? "Loading…" : "Load sample month"}
+            </Button>
+          </EmptyState>
         </Card>
       ) : (
-        <>
-          <SpendHero summary={s} />
+        // Phones: one column in order 1-5. Desktop: two independent columns
+        // (spending + categories | budgets + recent), wallets across the bottom.
+        <div className="grid gap-4 lg:grid-cols-2 lg:items-start lg:gap-6">
+          <div className="contents lg:flex lg:flex-col lg:gap-6">
+          <SpendHero summary={s} className="order-1" />
+
+          <Card
+            title="Where it went"
+            className="order-3"
+            aside={
+              <Link href="/expenses" className="text-sm font-semibold text-accent hover:underline">
+                All expenses
+              </Link>
+            }
+          >
+            {s.byCategory.length === 0 ? (
+              <p className="py-4 text-sm text-text-muted">Nothing spent in {monthLabel(month)} yet.</p>
+            ) : (
+              <ul className="flex flex-col gap-1">
+                {s.byCategory.map((c, i) => (
+                  <li key={c.categoryId}>
+                    <Link
+                      href={`/expenses?category=${c.categoryId}`}
+                      className="block rounded-lg px-1 py-2 hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-accent"
+                    >
+                      <span className="flex items-center gap-2">
+                        <CategoryIcon icon={c.icon} size={18} className="text-text-muted" />
+                        <span className="flex-1 font-medium">{c.name}</span>
+                        <span className="text-sm text-text-muted">{c.share}%</span>
+                        <span className="w-24 text-right font-mono font-semibold tabular-nums">{formatTaka(c.total)}</span>
+                      </span>
+                      <span aria-hidden className="mt-1.5 block h-2 overflow-hidden rounded-full bg-surface-muted">
+                        <span
+                          className="block h-full rounded-full"
+                          style={{
+                            width: `${Math.max(c.share, 2)}%`,
+                            background: `var(--chart-${(i % 6) + 1})`,
+                          }}
+                        />
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
+
+          </div>
+
+          <div className="contents lg:flex lg:flex-col lg:gap-6">
 
           <Card
             title="Budgets"
+            className="order-2"
             aside={
               <Link href="/budgets" className="text-sm font-semibold text-accent hover:underline">
                 {s.budget.lines.length ? "Manage" : "Set up"}
@@ -112,14 +149,14 @@ export function HomeScreen() {
                 href="/budgets"
                 className="flex items-center gap-3 rounded-lg border border-dashed border-border p-3 hover:bg-surface-muted"
               >
-                <span aria-hidden className="text-2xl">
-                  🎯
+                <span aria-hidden className="grid size-10 shrink-0 place-items-center rounded-full bg-accent/10 text-accent">
+                  <Target size={20} strokeWidth={1.75} />
                 </span>
                 <span className="flex-1">
                   <span className="block font-medium">Set a budget for your biggest category.</span>
                   <span className="block text-sm text-text-muted">
                     {s.byCategory[0]
-                      ? `${s.byCategory[0].icon} ${s.byCategory[0].name} is your top spend this month.`
+                      ? `${s.byCategory[0].name} is your top spend this month.`
                       : "We'll show how close you are as you spend."}
                   </span>
                 </span>
@@ -129,7 +166,7 @@ export function HomeScreen() {
                 {s.budget.lines.slice(0, 4).map((l) => (
                   <li key={l.categoryId}>
                     <p className="mb-1.5 flex items-center gap-2">
-                      <span aria-hidden>{l.icon}</span>
+                      <CategoryIcon icon={l.icon} size={18} className="text-text-muted" />
                       <span className="flex-1 font-medium">{l.name}</span>
                       <span className="font-mono text-sm tabular-nums">
                         <span className="font-semibold">{formatTaka(l.spent)}</span>
@@ -154,49 +191,8 @@ export function HomeScreen() {
           </Card>
 
           <Card
-            title="Where it went"
-            aside={
-              <Link href="/expenses" className="text-sm font-semibold text-accent hover:underline">
-                All expenses
-              </Link>
-            }
-          >
-            {s.byCategory.length === 0 ? (
-              <p className="py-4 text-sm text-text-muted">Nothing spent in {monthLabel(month)} yet.</p>
-            ) : (
-              <ul className="flex flex-col gap-1">
-                {s.byCategory.map((c, i) => (
-                  <li key={c.categoryId}>
-                    <Link
-                      href={`/expenses?category=${c.categoryId}`}
-                      className="block rounded-lg px-1 py-2 hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-accent"
-                    >
-                      <span className="flex items-center gap-2">
-                        <span aria-hidden className="text-lg">
-                          {c.icon}
-                        </span>
-                        <span className="flex-1 font-medium">{c.name}</span>
-                        <span className="text-sm text-text-muted">{c.share}%</span>
-                        <span className="w-24 text-right font-mono font-semibold tabular-nums">{formatTaka(c.total)}</span>
-                      </span>
-                      <span aria-hidden className="mt-1.5 block h-2 overflow-hidden rounded-full bg-surface-muted">
-                        <span
-                          className="block h-full rounded-full"
-                          style={{
-                            width: `${Math.max(c.share, 2)}%`,
-                            background: `var(--chart-${(i % 6) + 1})`,
-                          }}
-                        />
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
-
-          <Card
             title="Recent expenses"
+            className="order-4"
             aside={
               <Link href="/expenses" className="text-sm font-semibold text-accent hover:underline">
                 See all
@@ -220,36 +216,36 @@ export function HomeScreen() {
             )}
           </Card>
 
-          <Card title="By wallet">
-            <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          </div>
+
+          <Card title="By wallet" className="order-5 lg:col-span-2">
+            <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
               {s.byWallet.map((w) => (
                 <li key={w.accountId} className="rounded-lg border border-border p-3">
-                  <p className="truncate text-sm text-text-muted">
-                    <span aria-hidden>{walletIcon(w.type)} </span>
-                    {w.name}
+                  <p className="flex items-center gap-1.5 text-sm text-text-muted">
+                    <WalletIcon type={w.type} className="shrink-0" />
+                    <span className="truncate">{w.name}</span>
                   </p>
                   <p className="font-mono text-lg font-semibold tabular-nums">{formatTaka(w.total)}</p>
                 </li>
               ))}
             </ul>
           </Card>
-        </>
+        </div>
       )}
 
       <Link
         href="/groups/demo"
         className="group flex items-center gap-4 rounded-xl bg-surface p-4 shadow-card hover:ring-2 hover:ring-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
-        <span aria-hidden className="grid size-12 place-items-center rounded-xl bg-accent/15 text-2xl">
-          🏠
+        <span aria-hidden className="grid size-12 place-items-center rounded-xl bg-accent/15 text-accent">
+          <House size={24} strokeWidth={1.75} />
         </span>
         <span className="flex-1">
           <span className="block font-semibold">Mess — Bashundhara</span>
           <span className="block text-sm text-text-muted">Demo group · split bills and settle up</span>
         </span>
-        <span aria-hidden className="text-xl text-text-muted transition-transform group-hover:translate-x-0.5">
-          ›
-        </span>
+        <ChevronRight aria-hidden size={20} className="text-text-muted transition-transform group-hover:translate-x-0.5" />
       </Link>
 
       <Fab label="Add expense" onClick={() => setSheet({ open: true, expense: null })} />
@@ -289,11 +285,11 @@ export function HomeScreen() {
   );
 }
 
-function SpendHero({ summary: s }: { summary: MonthSummary }) {
+function SpendHero({ summary: s, className = "" }: { summary: MonthSummary; className?: string }) {
   const left = daysLeft(s.month);
   const change = s.previousTotal > 0 ? Math.round(((s.total - s.previousTotal) / s.previousTotal) * 100) : null;
   return (
-    <section className="rounded-xl bg-accent p-5 text-text-inverse shadow-card">
+    <section className={`rounded-xl bg-accent p-5 text-text-inverse shadow-card ${className}`}>
       <p className="text-sm opacity-90">You spent in {monthLabel(s.month, { short: true })}</p>
       <p className="mt-1 font-mono text-4xl font-bold tabular-nums">{formatTaka(s.total)}</p>
       {s.budget.planned > 0 && (

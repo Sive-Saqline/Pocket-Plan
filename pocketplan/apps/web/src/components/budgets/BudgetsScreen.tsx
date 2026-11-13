@@ -2,7 +2,11 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { Target, TriangleAlert } from "lucide-react";
 import { AppShell } from "@/components/app/AppShell";
+import { Button } from "@/components/ui/Button";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { CategoryBadge } from "@/components/ui/icons";
 import { Card, ErrorBanner, SkeletonRows } from "@/components/ui/Card";
 import { MonthSwitcher } from "@/components/ui/MonthSwitcher";
 import { Toast, useToast } from "@/components/ui/Toast";
@@ -12,7 +16,7 @@ import { currentMonth, monthLabel, shiftMonth } from "@/lib/dates";
 import type { BudgetLine, BudgetView } from "@/lib/ledger";
 import { formatTaka } from "@/lib/money";
 import { useApiData } from "@/lib/use-api-data";
-import { BudgetBar, BudgetLabel } from "./BudgetBar";
+import { BudgetBar, BudgetLabel, StatusDot } from "./BudgetBar";
 import { BudgetSheet } from "./BudgetSheet";
 
 const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
@@ -77,32 +81,26 @@ export function BudgetsScreen() {
             <OverallCard view={v} />
           ) : (
             <Card>
-              <div className="flex flex-col items-center gap-2 py-6 text-center">
-                <span aria-hidden className="text-3xl">
-                  🎯
-                </span>
-                <p className="font-semibold">No budgets for {monthLabel(month)} yet.</p>
-                <p className="max-w-xs text-sm text-text-muted">
-                  {canCopy
+              <EmptyState
+                icon={Target}
+                title={`No budgets for ${monthLabel(month)} yet.`}
+                text={
+                  canCopy
                     ? `Reuse last month's plan, or set a budget for your biggest category below.`
-                    : "Set a budget for your biggest category to start."}
-                </p>
+                    : "Set a budget for your biggest category to start."
+                }
+              >
                 {canCopy && (
-                  <button
-                    type="button"
-                    onClick={copyLastMonth}
-                    disabled={copying}
-                    className="mt-2 h-11 rounded-lg bg-accent px-4 font-semibold text-text-inverse hover:bg-accent-hover disabled:opacity-60"
-                  >
+                  <Button onClick={copyLastMonth} disabled={copying}>
                     {copying ? "Copying…" : `Copy ${monthLabel(lastMonth, { short: true })} budgets (${formatTaka(previous.data!.planned)})`}
-                  </button>
+                  </Button>
                 )}
-              </div>
+              </EmptyState>
             </Card>
           )}
 
           {budgeted.length > 0 && (
-            <ul className="flex flex-col gap-3" aria-label="Budgets">
+            <ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-3" aria-label="Budgets">
               {budgeted.map((line) => (
                 <li key={line.categoryId}>
                   <button
@@ -111,9 +109,7 @@ export function BudgetsScreen() {
                     className="block w-full rounded-xl bg-surface p-4 text-left shadow-card hover:ring-2 hover:ring-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                   >
                     <span className="mb-2 flex items-center gap-3">
-                      <span aria-hidden className="grid size-10 place-items-center rounded-full bg-surface-muted text-lg">
-                        {line.icon}
-                      </span>
+                      <CategoryBadge icon={line.icon} />
                       <span className="flex-1 font-semibold">{line.name}</span>
                       <span className="text-right font-mono tabular-nums">
                         <span className="font-semibold">{formatTaka(line.spent)}</span>
@@ -135,22 +131,16 @@ export function BudgetsScreen() {
               <ul className="divide-y divide-border">
                 {unbudgeted.map((line) => (
                   <li key={line.categoryId} className="flex items-center gap-3 py-2.5">
-                    <span aria-hidden className="grid size-9 place-items-center rounded-full bg-surface-muted">
-                      {line.icon}
-                    </span>
+                    <CategoryBadge icon={line.icon} className="size-9" />
                     <span className="min-w-0 flex-1">
                       <span className="block font-medium">{line.name}</span>
                       <span className="block text-sm text-text-muted">
                         {line.spent > 0 ? `${formatTaka(line.spent)} spent` : "Nothing spent"}
                       </span>
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => setEditing(line)}
-                      className="h-10 rounded-lg border border-border px-3 text-sm font-semibold text-accent hover:bg-surface-muted"
-                    >
+                    <Button variant="secondary" size="sm" onClick={() => setEditing(line)}>
                       Set budget
-                    </button>
+                    </Button>
                   </li>
                 ))}
               </ul>
@@ -195,12 +185,16 @@ function OverallCard({ view: v }: { view: BudgetView }) {
       {(over > 0 || near > 0) && (
         <p className="mt-3 flex flex-wrap gap-2 text-sm">
           {over > 0 && (
-            <span className="rounded-full bg-danger/10 px-3 py-1 font-medium text-danger">
-              ⚠ {over} over budget
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-danger/10 px-3 py-1 font-medium text-danger">
+              <TriangleAlert aria-hidden size={14} />
+              {over} over budget
             </span>
           )}
           {near > 0 && (
-            <span className="rounded-full bg-warning/15 px-3 py-1 font-medium">● {near} nearly there</span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-warning/15 px-3 py-1 font-medium">
+              <StatusDot className="bg-warning" />
+              {near} nearly there
+            </span>
           )}
         </p>
       )}

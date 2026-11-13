@@ -4,10 +4,10 @@ import { UserLedger } from './ledger.types';
 const at = '2026-10-01T00:00:00.000Z';
 const ledger = (): UserLedger => ({
   categories: [
-    { id: 'food', name: 'Food', icon: '🍔', createdAt: at },
-    { id: 'transport', name: 'Transport', icon: '🚗', createdAt: at },
-    { id: 'shopping', name: 'Shopping', icon: '🛍️', createdAt: at },
-    { id: 'health', name: 'Health', icon: '⚕️', createdAt: at },
+    { id: 'food', name: 'Food', icon: 'food', createdAt: at },
+    { id: 'transport', name: 'Transport', icon: 'transport', createdAt: at },
+    { id: 'shopping', name: 'Shopping', icon: 'shopping', createdAt: at },
+    { id: 'health', name: 'Health', icon: 'health', createdAt: at },
   ],
   accounts: [],
   expenses: [

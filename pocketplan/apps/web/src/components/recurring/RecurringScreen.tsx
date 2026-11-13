@@ -1,7 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { Repeat, TriangleAlert } from "lucide-react";
 import { AppShell, Fab } from "@/components/app/AppShell";
+import { Button } from "@/components/ui/Button";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { CategoryBadge } from "@/components/ui/icons";
 import { Card, ErrorBanner, SkeletonRows } from "@/components/ui/Card";
 import { Toast, useToast } from "@/components/ui/Toast";
 import { dayLabel } from "@/lib/dates";
@@ -20,7 +24,7 @@ const dueLabel = (date: string) => {
 
 export function confirmSummary({ confirmed, skipped }: ConfirmResult) {
   if (!confirmed && !skipped) return null;
-  return [confirmed && `✓ ${confirmed} confirmed`, skipped && `${skipped} skipped`].filter(Boolean).join(" · ");
+  return [confirmed && `${confirmed} confirmed`, skipped && `${skipped} skipped`].filter(Boolean).join(" · ");
 }
 
 export function RecurringScreen() {
@@ -52,20 +56,13 @@ export function RecurringScreen() {
         </Card>
       ) : list.length === 0 ? (
         <Card>
-          <div className="flex flex-col items-center gap-2 py-8 text-center">
-            <span aria-hidden className="text-3xl">
-              🔁
-            </span>
-            <p className="font-medium">No recurring expenses yet.</p>
-            <p className="max-w-xs text-sm text-text-muted">Add rent, internet or subscriptions so you never re-type them.</p>
-            <button
-              type="button"
-              onClick={() => setEditor({ open: true, template: null })}
-              className="mt-2 h-11 rounded-lg bg-accent px-4 font-semibold text-text-inverse hover:bg-accent-hover"
-            >
-              Add recurring expense
-            </button>
-          </div>
+          <EmptyState
+            icon={Repeat}
+            title="No recurring expenses yet."
+            text="Add rent, internet or subscriptions so you never re-type them."
+          >
+            <Button onClick={() => setEditor({ open: true, template: null })}>Add recurring expense</Button>
+          </EmptyState>
         </Card>
       ) : (
         groups
@@ -76,13 +73,9 @@ export function RecurringScreen() {
               title={g.title}
               aside={
                 g.title === "Due now" && (
-                  <button
-                    type="button"
-                    onClick={() => setReviewing(g.items)}
-                    className="h-9 rounded-lg bg-accent px-3 text-sm font-semibold text-text-inverse hover:bg-accent-hover"
-                  >
+                  <Button size="sm" onClick={() => setReviewing(g.items)}>
                     Review {g.items.length}
-                  </button>
+                  </Button>
                 )
               }
             >
@@ -97,12 +90,7 @@ export function RecurringScreen() {
                         onClick={() => setEditor({ open: true, template: r })}
                         className="flex min-h-16 w-full items-center gap-3 rounded-lg px-1 py-2 text-left hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-accent"
                       >
-                        <span
-                          aria-hidden
-                          className={`grid size-10 shrink-0 place-items-center rounded-full text-lg ${r.isActive ? "bg-surface-muted" : "bg-surface-muted opacity-50"}`}
-                        >
-                          {category?.icon ?? "🔁"}
-                        </span>
+                        <CategoryBadge icon={category?.icon} className={r.isActive ? "" : "opacity-50"} />
                         <span className="min-w-0 flex-1">
                           <span className={`block truncate font-medium ${r.isActive ? "" : "text-text-muted"}`}>{r.description}</span>
                           <span className="block truncate text-sm text-text-muted">
@@ -112,10 +100,10 @@ export function RecurringScreen() {
                         </span>
                         <span className="shrink-0 text-right">
                           <span className="block font-mono text-lg font-semibold tabular-nums">{formatTaka(r.amount)}</span>
-                          <span className={`block text-xs ${r.due ? "font-semibold text-danger" : "text-text-muted"}`}>
+                          <span className={`flex items-center justify-end gap-1 text-xs ${r.due ? "font-semibold text-danger" : "text-text-muted"}`}>
                             {r.due ? (
                               <>
-                                <span aria-hidden>⚠ </span>
+                                <TriangleAlert aria-hidden size={12} />
                                 {r.dueCount > 1 ? `${r.dueCount} due` : dueLabel(r.nextDueDate)}
                               </>
                             ) : r.isActive ? (

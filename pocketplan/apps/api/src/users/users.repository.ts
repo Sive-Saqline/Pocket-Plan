@@ -15,6 +15,8 @@ export interface StoredUser {
   preferences?: Partial<Preferences>;
   /** Unix seconds; tokens issued before this are rejected. */
   passwordChangedAt?: number;
+  /** Profile photo as a validated data URL (see avatar.ts); null or missing = none. */
+  avatar?: string | null;
 }
 
 export interface PublicUser {
@@ -23,10 +25,12 @@ export interface PublicUser {
   email: string;
   createdAt: string;
   preferences: Preferences;
+  /** Usable directly as an <img src>; null when the user has no photo. */
+  avatarUrl: string | null;
 }
 
 export type UserUpdate = Partial<
-  Pick<StoredUser, 'name' | 'passwordHash' | 'passwordChangedAt'>
+  Pick<StoredUser, 'name' | 'passwordHash' | 'passwordChangedAt' | 'avatar'>
 > & { preferences?: Partial<Preferences> };
 
 export class EmailTakenError extends Error {}
@@ -53,5 +57,6 @@ export function toPublicUser(user: StoredUser): PublicUser {
     email: user.email,
     createdAt: user.createdAt,
     preferences: { theme: user.preferences?.theme ?? 'system' },
+    avatarUrl: user.avatar ?? null,
   };
 }

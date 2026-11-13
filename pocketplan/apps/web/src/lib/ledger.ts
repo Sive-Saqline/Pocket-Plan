@@ -63,15 +63,14 @@ export interface BudgetView {
   lines: BudgetLine[];
 }
 
-export const walletTypes: { value: WalletType; label: string; icon: string }[] = [
-  { value: "CASH", label: "Cash", icon: "💵" },
-  { value: "MOBILE_WALLET", label: "Mobile wallet", icon: "📱" },
-  { value: "BANK", label: "Bank", icon: "🏦" },
-  { value: "CARD", label: "Card", icon: "💳" },
-  { value: "OTHER", label: "Other", icon: "👛" },
+// Icons for these live in components/ui/icons.tsx (WalletIcon).
+export const walletTypes: { value: WalletType; label: string }[] = [
+  { value: "CASH", label: "Cash" },
+  { value: "MOBILE_WALLET", label: "Mobile wallet" },
+  { value: "BANK", label: "Bank" },
+  { value: "CARD", label: "Card" },
+  { value: "OTHER", label: "Other" },
 ];
-
-export const walletIcon = (type: WalletType) => walletTypes.find((t) => t.value === type)?.icon ?? "👛";
 
 export type Frequency = "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
 

@@ -10,6 +10,8 @@ export interface User {
   email: string;
   createdAt: string;
   preferences: { theme: Theme };
+  /** Profile photo, usable as an <img src>; null when none is set. */
+  avatarUrl: string | null;
 }
 
 export interface AuthResult {
@@ -20,7 +22,9 @@ export interface AuthResult {
 type AuthState =
   | { status: "loading"; user: null }
   | { status: "authenticated"; user: User }
-  | { status: "anonymous"; user: null };
+  | { status: "anonymous"; user: null }
+  /** Signed in on this device, but the API couldn't be reached to confirm it. */
+  | { status: "unreachable"; user: null };
 
 interface AuthContextValue {
   state: AuthState;
@@ -33,6 +37,8 @@ interface AuthContextValue {
   acceptSession: (result: AuthResult) => void;
   /** Calls the API as the signed-in user; an expired session signs them out. */
   request: <T>(path: string, options?: Omit<RequestOptions, "token">) => Promise<T>;
+  /** Re-checks the saved session, e.g. after the API was unreachable. */
+  retry: () => void;
 }
 
 const TOKEN_KEY = "pocketplan.token";
@@ -63,20 +69,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (theme) applyTheme(theme);
   }, [theme]);
 
-  useEffect(() => {
+  const checkSession = useCallback(() => {
     const token = readToken();
     if (!token) {
       setState({ status: "anonymous", user: null });
       return;
     }
+    setState({ status: "loading", user: null });
     apiRequest<User>("/auth/me", { token })
       .then((user) => setState({ status: "authenticated", user }))
       .catch((err: unknown) => {
-        // Only drop the token when the API rejected it, not when it's unreachable.
-        if (err instanceof ApiError && err.status === 401) writeToken(null);
-        setState({ status: "anonymous", user: null });
+        // Only a rejected token signs the user out. Anything else (API down,
+        // network error, server error) keeps the session so Retry can restore it.
+        if (err instanceof ApiError && err.status === 401) {
+          writeToken(null);
+          setState({ status: "anonymous", user: null });
+        } else {
+          setState({ status: "unreachable", user: null });
+        }
       });
   }, []);
+
+  useEffect(checkSession, [checkSession]);
 
   const accept = useCallback(({ accessToken, user }: AuthResult) => {
     writeToken(accessToken);
@@ -113,8 +127,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       request,
       setUser: (user) => setState({ status: "authenticated", user }),
       acceptSession: accept,
+      retry: checkSession,
     }),
-    [state, accept, logout, request],
+    [state, accept, logout, request, checkSession],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

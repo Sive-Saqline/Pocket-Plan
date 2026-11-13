@@ -16,6 +16,8 @@ Collaborative expense & budgeting app. Requirements: [docs/PocketPlan-PRD-v4.md]
 3. `npm run db:migrate` — creates the schema in Supabase
 4. `npm run dev:api` and `npm run dev:web`
 
+The web app always runs on **port 3000** (the API only accepts requests from there). If something else is already using 3000, `dev:web` stops with `EADDRINUSE` instead of quietly moving to another port. Stop the other process first. On Windows, `netstat -ano | findstr :3000` shows its PID.
+
 `GET http://localhost:3001/health` returns `{ "status": "ok", "db": "up" }` once the database is reachable.
 
 ## Scripts
@@ -61,9 +63,10 @@ Signed-in users get a **Home** dashboard (this month vs last, spending by catego
 
 ## Profile
 
-Tap your avatar (top right), or **More → Profile & settings**: edit your name (email is read-only), pick a **System / Light / Dark** theme (saved to your account, applied before first paint so it never flashes), **change password** (other devices are signed out; this one stays signed in), and **Sign out**.
+Tap your avatar (top right), or **More → Profile & settings**: **add, change or remove a profile photo** (JPG, PNG or WebP; cropped to a square and shrunk in the browser before upload), edit your name (email is read-only), pick a **System / Light / Dark** theme (saved to your account, applied before first paint so it never flashes), **change password** (other devices are signed out; this one stays signed in), and **Sign out**.
 
-- API: `PATCH /auth/me` (`name`, `preferences.theme`), `POST /auth/change-password`.
+- API: `PATCH /auth/me` (`name`, `preferences.theme`), `POST /auth/change-password`, `PUT /auth/me/avatar` (`{ image: "data:image/jpeg;base64,…" }`) and `DELETE /auth/me/avatar`. The API checks the image's real file type and caps it at 64 KB; `GET /auth/me` returns it as `avatarUrl`.
+- **Demo storage:** the photo is kept on the user record in `users.json` until Step 22 moves it to Supabase Storage.
 
 ## Demo: split & settlement engine (no database needed)
 

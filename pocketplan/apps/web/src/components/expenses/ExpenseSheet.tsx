@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { TriangleAlert } from "lucide-react";
+import { StatusDot } from "@/components/budgets/BudgetBar";
+import { CloseButton } from "@/components/ui/CloseButton";
 import { ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { isoDate } from "@/lib/dates";
@@ -122,14 +125,7 @@ export function ExpenseSheet({
           <h2 id="expense-sheet-title" className="text-xl font-semibold">
             {expense ? "Edit expense" : "Add expense"}
           </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            className="grid size-11 place-items-center rounded-lg text-xl text-text-muted hover:bg-surface-muted"
-          >
-            ×
-          </button>
+          <CloseButton onClick={onClose} />
         </header>
 
         {formError && (
@@ -181,11 +177,15 @@ export function ExpenseSheet({
           {budgetNote && (
             <p
               role="status"
-              className={`mt-2 rounded-lg px-3 py-2 text-sm font-medium ${
+              className={`mt-2 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium ${
                 budgetNote.over ? "bg-danger/10 text-danger" : "bg-warning/15"
               }`}
             >
-              <span aria-hidden>{budgetNote.over ? "⚠ " : "● "}</span>
+              {budgetNote.over ? (
+                <TriangleAlert aria-hidden size={16} className="shrink-0" />
+              ) : (
+                <StatusDot className="bg-warning" />
+              )}
               This puts {budgetNote.name} at {budgetNote.percent}% of budget.
             </p>
           )}

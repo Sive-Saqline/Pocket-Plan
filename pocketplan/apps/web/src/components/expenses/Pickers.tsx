@@ -3,7 +3,9 @@
 import { useState, type ReactNode } from "react";
 import { ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { walletIcon, walletTypes, type Category, type Wallet, type WalletType } from "@/lib/ledger";
+import { Plus } from "lucide-react";
+import { CategoryIcon, WalletIcon } from "@/components/ui/icons";
+import { walletTypes, type Category, type Wallet, type WalletType } from "@/lib/ledger";
 
 // Shared by Add Expense, Confirm Recurring and the recurring template editor.
 
@@ -41,9 +43,7 @@ export function CategoryPicker({
                 on ? "border-accent bg-accent/10 text-accent ring-1 ring-accent" : "border-border hover:bg-surface-muted"
               }`}
             >
-              <span aria-hidden className="text-xl">
-                {c.icon}
-              </span>
+              <CategoryIcon icon={c.icon} size={22} />
               <span className="max-w-full truncate">{c.name}</span>
             </button>
           );
@@ -89,11 +89,11 @@ export function WalletPicker({
               role="radio"
               aria-checked={on}
               onClick={() => onChange(w.id)}
-              className={`h-11 rounded-full border px-4 text-sm font-medium ${
+              className={`inline-flex h-11 items-center gap-1.5 rounded-full border px-4 text-sm font-medium ${
                 on ? "border-accent bg-accent text-text-inverse" : "border-border bg-surface hover:bg-surface-muted"
               }`}
             >
-              <span aria-hidden>{walletIcon(w.type)} </span>
+              <WalletIcon type={w.type} />
               {w.name}
             </button>
           );
@@ -102,9 +102,10 @@ export function WalletPicker({
           <button
             type="button"
             onClick={() => setAdding(true)}
-            className="h-11 rounded-full border border-dashed border-border px-4 text-sm font-medium text-accent hover:bg-surface-muted"
+            className="inline-flex h-11 items-center gap-1 rounded-full border border-dashed border-border px-4 text-sm font-medium text-accent hover:bg-surface-muted"
           >
-            + Add
+            <Plus aria-hidden size={16} />
+            Add
           </button>
         )}
       </div>
@@ -174,7 +175,7 @@ function NewWalletForm({ onCancel, onCreated }: { onCancel: () => void; onCreate
         <select id="wallet-type" value={type} onChange={(e) => setType(e.target.value as WalletType)} className={`${inputClass} w-auto`}>
           {walletTypes.map((t) => (
             <option key={t.value} value={t.value}>
-              {t.icon} {t.label}
+              {t.label}
             </option>
           ))}
         </select>

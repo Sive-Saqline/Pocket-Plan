@@ -1,16 +1,19 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   Patch,
   Post,
+  Put,
   UseGuards,
 } from '@nestjs/common';
 import {
   ChangePasswordDto,
   LoginDto,
   RegisterDto,
+  SetAvatarDto,
   UpdateProfileDto,
 } from './auth.dto';
 import { AuthGuard, CurrentUserId } from './auth.guard';
@@ -44,6 +47,19 @@ export class AuthController {
     @Body() body: UpdateProfileDto,
   ) {
     return this.auth.updateProfile(userId, body);
+  }
+
+  /** Sets the profile photo. Body: { image: "data:image/jpeg;base64,..." }. */
+  @Put('me/avatar')
+  @UseGuards(AuthGuard)
+  setAvatar(@CurrentUserId() userId: string, @Body() body: SetAvatarDto) {
+    return this.auth.setAvatar(userId, body.image);
+  }
+
+  @Delete('me/avatar')
+  @UseGuards(AuthGuard)
+  removeAvatar(@CurrentUserId() userId: string) {
+    return this.auth.setAvatar(userId, null);
   }
 
   @Post('change-password')

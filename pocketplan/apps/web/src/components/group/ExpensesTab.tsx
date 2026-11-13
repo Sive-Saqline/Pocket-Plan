@@ -4,7 +4,9 @@ import { useState } from "react";
 import type { BalancePreview } from "@/lib/api";
 import type { Group } from "@/lib/group";
 import { formatTaka } from "@/lib/money";
-import { Card } from "./Card";
+import { ChevronRight, ReceiptText } from "lucide-react";
+import { Card } from "@/components/ui/Card";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 export function ExpensesTab({
   group,
@@ -24,14 +26,9 @@ export function ExpensesTab({
   if (group.expenses.length === 0) {
     return (
       <Card>
-        <div className="flex flex-col items-center gap-2 py-8 text-center">
-          <span aria-hidden className="text-3xl">
-            🧾
-          </span>
-          <p className="font-medium">No shared expenses yet.</p>
-          <p className="text-sm text-text-muted">Add the first one and PocketPlan will split it.</p>
+        <EmptyState icon={ReceiptText} title="No shared expenses yet." text="Add the first one and PocketPlan will split it.">
           <AddButton onClick={onAdd} />
-        </div>
+        </EmptyState>
       </Card>
     );
   }
@@ -71,9 +68,7 @@ export function ExpensesTab({
                 <span className="font-mono text-lg font-semibold tabular-nums">
                   {formatTaka(e.amount)}
                 </span>
-                <span aria-hidden className={`text-text-muted transition-transform ${open ? "rotate-90" : ""}`}>
-                  ›
-                </span>
+                <ChevronRight aria-hidden size={20} className={`shrink-0 text-text-muted transition-transform ${open ? "rotate-90" : ""}`} />
               </button>
               {open && (
                 <div className="mb-3 rounded-lg bg-surface-muted p-3">
