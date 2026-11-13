@@ -11,7 +11,7 @@ import { supabaseServer } from "@/lib/server/supabase";
 
 const API_URL = (process.env.API_URL ?? "http://localhost:3001").replace(/\/+$/, "");
 // Routes the API serves without signing in.
-const PUBLIC = new Set(["health", "balances/preview"]);
+const PUBLIC = new Set(["health"]);
 const TIMEOUT_MS = 20_000;
 
 async function forward(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {

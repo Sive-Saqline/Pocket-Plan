@@ -26,7 +26,7 @@ Every step's "Done when" list includes: *"Bugs found during this step fixed and 
 | K1 | The API `lint` script runs with `--fix`, so it changes files. Add a check-only script for CI. | Any time |
 | K2 | `test/app.e2e-spec.ts` isn't part of `npm run test:e2e`. Include it once tests run against a database. | Step 11 |
 | K3 | The API falls back to a development secret when `JWT_SECRET` isn't set. Goes away when sign-in moves to Supabase Auth. | Step 11 |
-| K4 | `POST /balances/preview` doesn't require sign-in (demo only). | Step 17 |
+| K4 | ~~`POST /balances/preview` doesn't require sign-in (demo only).~~ **Resolved 2026-11-13:** endpoint removed with the demo data. | Done |
 
 ## Risk checklist (check whenever a step touches the area)
 

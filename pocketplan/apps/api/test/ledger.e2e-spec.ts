@@ -172,22 +172,6 @@ describe('Personal expenses (e2e)', () => {
     await as(rafi).delete(`/expenses/${mine.body.id}`).expect(204);
   });
 
-  it('adds sample data only to an empty account', async () => {
-    const res = await as(nusrat)
-      .post('/expenses/sample-data')
-      .send({ today: '2026-10-27' })
-      .expect(201);
-    expect(res.body.added).toBe(30);
-    await as(nusrat)
-      .post('/expenses/sample-data')
-      .send({ today: '2026-10-27' })
-      .expect(409);
-    const wallets = (await as(nusrat).get('/accounts').expect(200)).body;
-    expect(wallets.map((w: { name: string }) => w.name).sort()).toEqual(
-      ['City Bank', 'Cash', 'bKash'].sort(),
-    );
-  });
-
   it('summarises a month exactly, with category shares and last month for comparison', async () => {
     const add = (amount: number, category: string, expenseDate: string) =>
       as(rafi)
@@ -314,26 +298,12 @@ describe('Personal expenses (e2e)', () => {
       })
       .expect(400);
     expect(borrowed.body.message).toBe('Unknown category');
-    // Rafi set Bills to ৳4,500 for October; Nusrat only has her own sample ৳4,000
+    // Rafi set Bills to ৳4,500 for October; Nusrat has no budgets of her own
     const herLines = (
       await as(nusrat).get('/budgets?month=2026-10').expect(200)
     ).body.lines;
     expect(
       herLines.find((l: { name: string }) => l.name === 'Bills').planned,
-    ).toBe(4000);
-  });
-
-  it('sample data includes budgets for this month and last', async () => {
-    const view = (await as(nusrat).get('/budgets?month=2026-10').expect(200))
-      .body;
-    const status = (name: string) =>
-      view.lines.find((l: { name: string }) => l.name === name).status;
-    expect(view.planned).toBe(17750);
-    expect(status('Shopping')).toBe('over');
-    expect(status('Transport')).toBe('near');
-    expect(status('Food')).toBe('under');
-    expect(
-      (await as(nusrat).get('/budgets?month=2026-09').expect(200)).body.planned,
-    ).toBe(17750);
+    ).toBeNull();
   });
 });

@@ -1,5 +1,3 @@
-import type { Group } from "./group";
-
 /**
  * API calls go to our own server first (/api/pp → app/api/pp/[...path]),
  * which adds the sign-in token from HttpOnly cookies. Page scripts never see
@@ -55,34 +53,4 @@ async function send<T>(url: string, { method = "GET", body, signal }: RequestOpt
     throw new ApiError(message ?? `Request failed (${res.status}).`, res.status);
   }
   return data as T;
-}
-
-export interface BalancePreview {
-  currency: "BDT";
-  expenses: { shares: { memberId: string; share: number }[] }[];
-  balances: { memberId: string; name: string; balance: number }[];
-  payments: {
-    from: string;
-    fromName: string;
-    to: string;
-    toName: string;
-    amount: number;
-  }[];
-}
-
-export function previewBalances(group: Group, signal?: AbortSignal) {
-  return apiRequest<BalancePreview>("/balances/preview", {
-    method: "POST",
-    signal,
-    body: {
-      members: group.members,
-      expenses: group.expenses.map(({ description, amount, paidBy, participants }) => ({
-        description,
-        amount,
-        paidBy,
-        participants,
-      })),
-      settlements: group.settlements.map(({ from, to, amount }) => ({ from, to, amount })),
-    },
-  });
 }

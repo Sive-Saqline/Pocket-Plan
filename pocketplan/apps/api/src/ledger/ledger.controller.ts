@@ -19,7 +19,6 @@ import {
   CreateWalletDto,
   ListExpensesQuery,
   MonthQuery,
-  SampleDataDto,
   SetBudgetDto,
   UpdateExpenseDto,
 } from './ledger.dto';
@@ -75,12 +74,6 @@ export class LedgerController {
     @Param('id', ParseUUIDPipe) id: string,
   ) {
     await this.ledger.deleteExpense(userId, id);
-  }
-
-  /** Demo helper: fills an empty account with about two months of realistic expenses. */
-  @Post('expenses/sample-data')
-  sampleData(@CurrentUserId() userId: string, @Body() body: SampleDataDto) {
-    return this.ledger.addSampleData(userId, body.today);
   }
 
   @Get('budgets')

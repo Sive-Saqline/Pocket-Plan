@@ -55,9 +55,9 @@ Sign-in runs on **Supabase Auth**; all data is stored in Supabase (PostgreSQL) t
 
 ## Personal expenses
 
-Signed-in users get a **Home** dashboard (this month vs last, spending by category, recent expenses, per-wallet totals) and an **Expenses** page (month switcher, category filters, list grouped by day). Add, edit and delete from the **+** button; create wallets inline with **+ Add**. A new account can use **Load sample month** to get about two months of realistic data.
+Signed-in users get a **Home** dashboard (this month vs last, spending by category, recent expenses, per-wallet totals) and an **Expenses** page (month switcher, category filters, list grouped by day). Add, edit and delete from the **+** button; create wallets inline with **+ Add**.
 
-- API (all require sign-in, all scoped to the signed-in user): `GET /categories`, `GET|POST /accounts`, `GET|POST /expenses`, `PATCH|DELETE /expenses/:id`, `POST /expenses/sample-data`, `GET /reports/summary?month=YYYY-MM`.
+- API (all require sign-in, all scoped to the signed-in user): `GET /categories`, `GET|POST /accounts`, `GET|POST /expenses`, `PATCH|DELETE /expenses/:id`, `GET /reports/summary?month=YYYY-MM`.
 - New users get the 9 default categories (PRD §6.3) and a Cash wallet.
 - **Storage:** Supabase tables `accounts`, `categories`, `expenses`, `budgets`, `recurring_expenses` (through `PrismaLedgerStore`). API tests use temporary JSON files instead, so they need no database.
 
@@ -65,7 +65,7 @@ Signed-in users get a **Home** dashboard (this month vs last, spending by catego
 
 **Budgets** tab: set a monthly limit per category, plan one month ahead, and **Copy** last month's budgets in one tap. Bars follow EXPERIENCE.md §5.6: teal under 80%, amber 80–99%, red at 100%+, always with a text label too. Home shows "৳X of ৳Y budgeted" and your fullest budgets; the Add Expense sheet warns *"This puts Transport at 105% of budget."* before you save.
 
-- API: `GET /budgets?month=YYYY-MM`, `PUT /budgets` (create or replace), `DELETE /budgets/:categoryId?month=`, `POST /budgets/copy`. **Load sample month** includes budgets for this month and last.
+- API: `GET /budgets?month=YYYY-MM`, `PUT /budgets` (create or replace), `DELETE /budgets/:categoryId?month=`, `POST /budgets/copy`.
 
 ## Recurring expenses
 
@@ -73,7 +73,6 @@ Signed-in users get a **Home** dashboard (this month vs last, spending by catego
 
 - API: `GET|POST /recurring-expenses`, `PATCH|DELETE /recurring-expenses/:id`, `POST /recurring-expenses/:id/confirm`. "Due" is computed against `?today=YYYY-MM-DD` (the user's local date); there is no background job.
 - Monthly dates keep their day: a bill on the 31st falls on 28 Feb and returns to 31 Mar.
-- **Load sample month** includes 2 due, 2 upcoming and 1 paused template.
 
 ## Profile
 
@@ -82,33 +81,6 @@ Tap your avatar (top right), or **More → Profile & settings**: **add, change o
 - API: `PATCH /auth/me` (`name`, `preferences.theme`), `POST /auth/change-password`, `PUT /auth/me/avatar` (`{ image: "data:image/jpeg;base64,…" }`) and `DELETE /auth/me/avatar`. The API checks the image's real file type and caps it at 64 KB; `GET /auth/me` returns it as `avatarUrl`.
 - **Storage:** photos are in the public Supabase Storage bucket `avatars` (random file names; only the API can upload or delete).
 
-## Demo: split & settlement engine (no database needed)
+## Split & settlement engine
 
-The PRD §9 engine lives in [apps/api/src/balances/settlement.ts](apps/api/src/balances/settlement.ts): equal / "just me" splits, net balances, and greedy debt simplification, all in integer paisa.
-
-```bash
-npm test            # 24 unit tests, incl. a 500-group randomised money-correctness check
-npm run test:e2e    # HTTP tests against POST /balances/preview
-
-npm run dev:api     # then, in another terminal:
-curl -X POST localhost:3001/balances/preview \
-  -H "Content-Type: application/json" \
-  --data @apps/api/demo/mess-month.json
-```
-
-[demo/mess-month.json](apps/api/demo/mess-month.json) is a 4-person shared flat for one month (rent, bazar, bills, a 3-way gas split, a "just me" item, and one settlement already paid). Omit `participants` on an expense to split it among all members.
-
-## Demo: Settle Up screen
-
-```bash
-npm run dev:api     # terminal 1
-npm run dev:web     # terminal 2 → open http://localhost:3000 → "Open demo group"
-```
-
-A working version of the v4 group-detail mock. Every change is sent to `POST /balances/preview`, so the numbers on screen come from the tested API engine, not from the browser.
-
-- **Balances:** each member's net position, suggested payments with **Settle** buttons, and settlement history with **Undo**.
-- **Expenses:** tap a row to see the exact per-person shares; the **+** button adds an expense (Everyone / Choose people / Just the payer).
-- **Members:** add people; anyone with expenses or settlements can't be removed.
-- **Reset demo** restores the sample month. Data is kept in browser storage until the database work lands.
-- Stop the API to see the error banner and **Retry**.
+The PRD §9 calculations live in [apps/api/src/balances/settlement.ts](apps/api/src/balances/settlement.ts): equal / "just me" splits, net balances, and greedy debt simplification, all in integer paisa, covered by unit tests (`npm test`) including a 500-group randomised money-correctness check. Real groups that use it arrive in roadmap Steps 15–17; there is no demo group or sample data.

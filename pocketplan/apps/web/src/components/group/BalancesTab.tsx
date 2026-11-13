@@ -1,5 +1,4 @@
-import type { BalancePreview } from "@/lib/api";
-import type { Group } from "@/lib/group";
+import type { BalancePreview, Group } from "@/lib/group";
 import { formatTaka } from "@/lib/money";
 import { Avatar } from "./Avatar";
 import { ArrowRight, Check, CircleCheck } from "lucide-react";

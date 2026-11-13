@@ -1,6 +1,6 @@
 "use client";
 
-import { Ellipsis, House, PieChart, Plus, ReceiptText, UsersRound } from "lucide-react";
+import { Ellipsis, House, PieChart, Plus, ReceiptText } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -13,7 +13,7 @@ const tabs = [
   { href: "/", label: "Home", icon: House },
   { href: "/expenses", label: "Expenses", icon: ReceiptText },
   { href: "/budgets", label: "Budgets", icon: PieChart },
-  { href: "/groups/demo", label: "Groups", icon: UsersRound },
+  // Groups returns here with real, saved groups in roadmap Step 15.
   { href: "/more", label: "More", icon: Ellipsis },
 ];
 
@@ -119,7 +119,7 @@ export function AppShell({
         aria-label="Main"
         className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
       >
-        <ul className="mx-auto grid h-16 max-w-2xl grid-cols-5">
+        <ul className="mx-auto grid h-16 max-w-2xl grid-cols-4">
           {tabs.map((t) => {
             const active = isActive(t.href, pathname);
             const badge = t.href === "/more" && dueCount > 0;

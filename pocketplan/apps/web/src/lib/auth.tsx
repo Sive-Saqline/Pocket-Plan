@@ -92,10 +92,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [checkSession]);
 
   useEffect(() => {
-    // Sessions used to be kept in localStorage; remove any copies left behind.
+    // Remove leftovers from earlier versions: sessions kept in localStorage,
+    // and the old browser-only demo group.
     try {
       for (const key of Object.keys(localStorage)) {
-        if (key.startsWith("sb-") && key.endsWith("-auth-token")) localStorage.removeItem(key);
+        if ((key.startsWith("sb-") && key.endsWith("-auth-token")) || key.startsWith("pocketplan.demo-group")) {
+          localStorage.removeItem(key);
+        }
       }
     } catch {
       // storage blocked: nothing to clean up

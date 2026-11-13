@@ -199,20 +199,4 @@ describe('Recurring expenses (e2e)', () => {
       .expect(400);
     expect(borrowed.body.message).toBe('Unknown category');
   });
-
-  it('sample data adds two due templates, two upcoming and one paused', async () => {
-    await as(nusrat)
-      .post('/expenses/sample-data')
-      .send({ today: '2026-10-28' })
-      .expect(201);
-    const list = (
-      await as(nusrat).get('/recurring-expenses?today=2026-10-28').expect(200)
-    ).body as { due: boolean; isActive: boolean; description: string }[];
-    expect(list.filter((r) => r.due).map((r) => r.description)).toEqual([
-      'Gym membership',
-      'Mobile internet pack',
-    ]);
-    expect(list.filter((r) => r.isActive && !r.due)).toHaveLength(2);
-    expect(list.filter((r) => !r.isActive)).toHaveLength(1);
-  });
 });

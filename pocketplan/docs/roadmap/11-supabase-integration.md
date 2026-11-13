@@ -16,7 +16,7 @@
 - ✅ **Task 4:** sign-up (with email confirmation), sign-in, sign-out, change password and **forgot / reset password** through Supabase Auth. The API checks tokens against the project's public signing keys. Its own login code (bcrypt, `users.json`, `JWT_SECRET`) is gone.
 - ✅ **Task 5:** profile photos in the Supabase Storage bucket `avatars` (migration 5).
 - 🟡 **Task 7:** API tests run with test stand-ins for Supabase (no database needed). A live check against Supabase passed on 2026-11-13. Still to add: automated tests against a test database.
-- ⏳ **Task 8:** remove leftovers: the `bcryptjs` and `@nestjs/jwt` packages, and the old `apps/api/.data/` demo files (no longer read; old demo accounts aren't migrated).
+- 🟡 **Task 8:** ✅ old `apps/api/.data/` demo files deleted, and all dummy data removed (sample month, demo group, `/balances/preview`, `demo/mess-month.json`) on 2026-11-13. ⏳ Still to remove: the unused `bcryptjs` and `@nestjs/jwt` packages.
 - ⏳ **Your test:** see "How to test" in the conversation / README Accounts section.
 
 ## Goal

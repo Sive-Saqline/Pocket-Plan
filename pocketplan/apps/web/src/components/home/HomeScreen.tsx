@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, House, ReceiptText, Target } from "lucide-react";
+import { ReceiptText, Target } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { CategoryIcon, WalletIcon } from "@/components/ui/icons";
@@ -12,9 +12,8 @@ import { ExpenseRow } from "@/components/expenses/ExpenseRow";
 import { ExpenseSheet } from "@/components/expenses/ExpenseSheet";
 import { Card, ErrorBanner, SkeletonRows } from "@/components/ui/Card";
 import { Toast, useToast } from "@/components/ui/Toast";
-import { ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { currentMonth, daysLeft, isoDate, monthLabel } from "@/lib/dates";
+import { currentMonth, daysLeft, monthLabel } from "@/lib/dates";
 import type { Expense, MonthSummary } from "@/lib/ledger";
 import { formatTaka } from "@/lib/money";
 import { useApiData } from "@/lib/use-api-data";
@@ -26,34 +25,18 @@ import { confirmSummary } from "@/components/recurring/RecurringScreen";
 import type { RecurringExpense } from "@/lib/ledger";
 
 export function HomeScreen() {
-  const { state, request } = useAuth();
+  const { state } = useAuth();
   const month = currentMonth();
   const summary = useApiData<MonthSummary>(`/reports/summary?month=${month}`);
   const personal = usePersonalData();
   const toast = useToast();
   const [sheet, setSheet] = useState<{ open: boolean; expense: Expense | null }>({ open: false, expense: null });
-  const [seeding, setSeeding] = useState(false);
   const recurring = useRecurring();
   const [reviewing, setReviewing] = useState<RecurringExpense[] | null>(null);
 
   const firstName = state.user?.name.split(" ")[0] ?? "";
   const s = summary.data;
   const isEmpty = s !== null && s.count === 0 && s.previousTotal === 0;
-
-  async function loadSample() {
-    setSeeding(true);
-    try {
-      await request("/expenses/sample-data", { method: "POST", body: { today: isoDate() } });
-      personal.reload();
-      notifyRecurringChanged();
-      summary.reload();
-      toast.show("Sample month loaded");
-    } catch (err) {
-      toast.show(err instanceof ApiError ? err.message : "Couldn't load sample data");
-    } finally {
-      setSeeding(false);
-    }
-  }
 
   return (
     <AppShell title="Home">
@@ -75,12 +58,9 @@ export function HomeScreen() {
           <EmptyState
             icon={ReceiptText}
             title="No expenses yet."
-            text="Tap + to add your first one, or load a sample month to see how PocketPlan works."
+            text="Add what you spend and PocketPlan shows where your money goes."
           >
             <Button onClick={() => setSheet({ open: true, expense: null })}>Add expense</Button>
-            <Button variant="secondary" onClick={loadSample} disabled={seeding}>
-              {seeding ? "Loading…" : "Load sample month"}
-            </Button>
           </EmptyState>
         </Card>
       ) : (
@@ -233,20 +213,6 @@ export function HomeScreen() {
           </Card>
         </div>
       )}
-
-      <Link
-        href="/groups/demo"
-        className="group flex items-center gap-4 rounded-xl bg-surface p-4 shadow-card hover:ring-2 hover:ring-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-      >
-        <span aria-hidden className="grid size-12 place-items-center rounded-xl bg-accent/15 text-accent">
-          <House size={24} strokeWidth={1.75} />
-        </span>
-        <span className="flex-1">
-          <span className="block font-semibold">Mess — Bashundhara</span>
-          <span className="block text-sm text-text-muted">Demo group · split bills and settle up</span>
-        </span>
-        <ChevronRight aria-hidden size={20} className="text-text-muted transition-transform group-hover:translate-x-0.5" />
-      </Link>
 
       <Fab label="Add expense" onClick={() => setSheet({ open: true, expense: null })} />
       <ExpenseSheet

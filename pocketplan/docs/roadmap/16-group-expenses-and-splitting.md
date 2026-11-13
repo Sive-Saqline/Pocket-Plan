@@ -11,7 +11,7 @@ Log expenses inside a group and split them between members.
    - Split types: **equal** (everyone, or chosen people) and **just me**.
    - Calculate shares with the existing engine (`settlement.ts`) so the amounts always add up exactly.
    - The payer and every participant must be current members.
-3. **Web:** a group Expenses tab and an Add Expense sheet connected to the API (reuse the demo components). The Expenses page can optionally show group expenses I'm part of.
+3. **Web:** a group Expenses tab and an Add Expense sheet connected to the API (reuse the components in `components/group/`). The Expenses page can optionally show group expenses I'm part of.
 4. Tests: split amounts always add up to the total (including amounts that don't divide evenly), membership checks, editing a split, a failed save leaves nothing half-saved.
 
 ## Out of scope

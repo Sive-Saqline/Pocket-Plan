@@ -89,11 +89,6 @@ export class MonthQuery {
   month: string;
 }
 
-export class SampleDataDto {
-  @Matches(DATE, { message: 'today must be YYYY-MM-DD' })
-  today: string;
-}
-
 export class CreateWalletDto {
   @Transform(trim)
   @IsString()

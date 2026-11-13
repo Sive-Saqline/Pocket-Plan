@@ -6,7 +6,6 @@ import {
 } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { budgetView } from './budgets';
-import { addSampleData } from './defaults';
 import {
   CopyBudgetsDto,
   CreateExpenseDto,
@@ -110,17 +109,6 @@ export class LedgerService {
     return this.store.mutate(userId, (ledger) => {
       findExpense(ledger, id);
       ledger.expenses = ledger.expenses.filter((e) => e.id !== id);
-    });
-  }
-
-  addSampleData(userId: string, today: string) {
-    return this.store.mutate(userId, (ledger) => {
-      if (ledger.expenses.length > 0) {
-        throw new ConflictException(
-          'Sample data can only be added to an empty account',
-        );
-      }
-      return { added: addSampleData(ledger, today) };
     });
   }
 
