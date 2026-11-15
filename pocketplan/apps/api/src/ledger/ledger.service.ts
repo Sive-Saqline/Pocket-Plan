@@ -8,11 +8,14 @@ import { randomUUID } from 'node:crypto';
 import { budgetView } from './budgets';
 import {
   CopyBudgetsDto,
+  CreateCategoryDto,
   CreateExpenseDto,
   CreateWalletDto,
   ListExpensesQuery,
   SetBudgetDto,
+  UpdateCategoryDto,
   UpdateExpenseDto,
+  UpdateWalletDto,
 } from './ledger.dto';
 import { LedgerStore } from './ledger.store';
 import { Expense, UserLedger } from './ledger.types';
@@ -42,24 +45,94 @@ export class LedgerService {
     return (await this.store.read(userId)).accounts;
   }
 
-  createWallet(userId: string, { name, type }: CreateWalletDto) {
+  createWallet(userId: string, { name, type, balance }: CreateWalletDto) {
     return this.store.mutate(userId, (ledger) => {
-      if (
-        ledger.accounts.some((a) => a.name.toLowerCase() === name.toLowerCase())
-      ) {
-        throw new ConflictException(`You already have a wallet called ${name}`);
-      }
+      assertUniqueName(ledger.accounts, name, 'a wallet');
       const now = new Date().toISOString();
       const wallet = {
         id: randomUUID(),
         name,
         type,
-        balance: 0,
+        balance: balance ?? 0,
         createdAt: now,
         updatedAt: now,
       };
       ledger.accounts.push(wallet);
       return wallet;
+    });
+  }
+
+  updateWallet(userId: string, id: string, dto: UpdateWalletDto) {
+    return this.store.mutate(userId, (ledger) => {
+      const wallet = ledger.accounts.find((a) => a.id === id);
+      if (!wallet) throw new NotFoundException('Wallet not found');
+      if (dto.name !== undefined) {
+        assertUniqueName(ledger.accounts, dto.name, 'a wallet', id);
+      }
+      Object.assign(wallet, stripUndefined(dto), {
+        updatedAt: new Date().toISOString(),
+      });
+      return wallet;
+    });
+  }
+
+  /** Refused while expenses or recurring expenses use it; never deletes them. */
+  deleteWallet(userId: string, id: string) {
+    return this.store.mutate(userId, (ledger) => {
+      const wallet = ledger.accounts.find((a) => a.id === id);
+      if (!wallet) throw new NotFoundException('Wallet not found');
+      assertUnused(ledger, wallet.name, (x) => x.accountId === id);
+      if (ledger.accounts.length === 1) {
+        throw new ConflictException(
+          'You need at least one wallet. Add another before deleting this one.',
+        );
+      }
+      ledger.accounts = ledger.accounts.filter((a) => a.id !== id);
+    });
+  }
+
+  createCategory(userId: string, { name, icon }: CreateCategoryDto) {
+    return this.store.mutate(userId, (ledger) => {
+      assertUniqueName(ledger.categories, name, 'a category');
+      const category = {
+        id: randomUUID(),
+        name,
+        icon,
+        createdAt: new Date().toISOString(),
+      };
+      ledger.categories.push(category);
+      return category;
+    });
+  }
+
+  updateCategory(userId: string, id: string, dto: UpdateCategoryDto) {
+    return this.store.mutate(userId, (ledger) => {
+      const category = ledger.categories.find((c) => c.id === id);
+      if (!category) throw new NotFoundException('Category not found');
+      if (dto.name !== undefined) {
+        assertUniqueName(ledger.categories, dto.name, 'a category', id);
+      }
+      Object.assign(category, stripUndefined(dto));
+      return category;
+    });
+  }
+
+  /**
+   * Refused while expenses or recurring expenses use it. Its budgets go with
+   * it: a budget for a category that no longer exists means nothing.
+   */
+  deleteCategory(userId: string, id: string) {
+    return this.store.mutate(userId, (ledger) => {
+      const category = ledger.categories.find((c) => c.id === id);
+      if (!category) throw new NotFoundException('Category not found');
+      assertUnused(ledger, category.name, (x) => x.categoryId === id);
+      if (ledger.categories.length === 1) {
+        throw new ConflictException(
+          'You need at least one category. Add another before deleting this one.',
+        );
+      }
+      ledger.categories = ledger.categories.filter((c) => c.id !== id);
+      ledger.budgets = ledger.budgets.filter((b) => b.categoryId !== id);
     });
   }
 
@@ -255,6 +328,45 @@ export function assertRefs(
   if (accountId && !ledger.accounts.some((a) => a.id === accountId)) {
     throw new BadRequestException('Unknown wallet');
   }
+}
+
+/** Names are unique per user, ignoring case ("bKash" = "BKASH"). */
+function assertUniqueName(
+  items: { id: string; name: string }[],
+  name: string,
+  what: string,
+  exceptId?: string,
+) {
+  const clash = items.find(
+    (x) => x.id !== exceptId && x.name.toLowerCase() === name.toLowerCase(),
+  );
+  if (clash) {
+    throw new ConflictException(
+      `You already have ${what} called ${clash.name}`,
+    );
+  }
+}
+
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
+/** Blocks deleting a wallet or category that expenses or recurring expenses still use. */
+function assertUnused(
+  ledger: UserLedger,
+  name: string,
+  uses: (x: { accountId: string; categoryId: string }) => boolean,
+) {
+  const expenses = ledger.expenses.filter(uses).length;
+  const recurring = ledger.recurring.filter(uses).length;
+  if (expenses + recurring === 0) return;
+  const parts = [
+    expenses && plural(expenses, 'expense'),
+    recurring && plural(recurring, 'recurring expense'),
+  ].filter(Boolean);
+  throw new ConflictException(
+    `${name} is used by ${parts.join(' and ')}. Move or delete ${
+      expenses + recurring === 1 ? 'it' : 'them'
+    } first.`,
+  );
 }
 
 export function stripUndefined<T extends object>(value: T): Partial<T> {

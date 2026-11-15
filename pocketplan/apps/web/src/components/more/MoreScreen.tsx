@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, Repeat, UserRound, type LucideIcon } from "lucide-react";
+import { ChevronRight, Repeat, UserRound, WalletCards, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { AppShell } from "@/components/app/AppShell";
@@ -32,6 +32,12 @@ export function MoreScreen() {
               </span>
             )
           }
+        />
+        <MoreLink
+          href="/wallets"
+          icon={WalletCards}
+          title="Wallets & categories"
+          detail="Add, rename or remove; set wallet balances"
         />
         <MoreLink href="/profile" icon={UserRound} title="Profile & settings" detail={state.user?.email ?? ""} />
       </ul>

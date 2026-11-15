@@ -11,8 +11,14 @@ import {
   Matches,
   Max,
   MaxLength,
+  Min,
 } from 'class-validator';
-import { ACCOUNT_TYPES, type AccountType } from './ledger.types';
+import {
+  ACCOUNT_TYPES,
+  CATEGORY_ICONS,
+  type AccountType,
+  type CategoryIcon,
+} from './ledger.types';
 import { FREQUENCIES, type Frequency } from './schedule';
 
 const money = { maxDecimalPlaces: 2, allowNaN: false, allowInfinity: false };
@@ -89,15 +95,68 @@ export class MonthQuery {
   month: string;
 }
 
+// A wallet's balance is typed in by the user and is informational only
+// (PRD Decision 6). It may be negative, e.g. a credit card.
+const BALANCE_LIMIT = 1_000_000_000;
+
 export class CreateWalletDto {
   @Transform(trim)
   @IsString()
   @IsNotEmpty({ message: 'Name the wallet' })
-  @MaxLength(40)
+  @MaxLength(40, { message: 'Wallet name must be at most 40 characters' })
   name: string;
 
   @IsIn(ACCOUNT_TYPES, { message: 'Pick a wallet type' })
   type: AccountType;
+
+  @IsOptional()
+  @IsNumber(money, { message: 'Balance must have at most 2 decimals' })
+  @Min(-BALANCE_LIMIT, { message: 'Balance is too large' })
+  @Max(BALANCE_LIMIT, { message: 'Balance is too large' })
+  balance?: number;
+}
+
+export class UpdateWalletDto {
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @IsNotEmpty({ message: 'Name the wallet' })
+  @MaxLength(40, { message: 'Wallet name must be at most 40 characters' })
+  name?: string;
+
+  @IsOptional()
+  @IsIn(ACCOUNT_TYPES, { message: 'Pick a wallet type' })
+  type?: AccountType;
+
+  @IsOptional()
+  @IsNumber(money, { message: 'Balance must have at most 2 decimals' })
+  @Min(-BALANCE_LIMIT, { message: 'Balance is too large' })
+  @Max(BALANCE_LIMIT, { message: 'Balance is too large' })
+  balance?: number;
+}
+
+export class CreateCategoryDto {
+  @Transform(trim)
+  @IsString()
+  @IsNotEmpty({ message: 'Name the category' })
+  @MaxLength(30, { message: 'Category name must be at most 30 characters' })
+  name: string;
+
+  @IsIn(CATEGORY_ICONS, { message: 'Pick an icon' })
+  icon: CategoryIcon;
+}
+
+export class UpdateCategoryDto {
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @IsNotEmpty({ message: 'Name the category' })
+  @MaxLength(30, { message: 'Category name must be at most 30 characters' })
+  name?: string;
+
+  @IsOptional()
+  @IsIn(CATEGORY_ICONS, { message: 'Pick an icon' })
+  icon?: CategoryIcon;
 }
 
 export class SetBudgetDto {

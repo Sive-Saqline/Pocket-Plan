@@ -1,6 +1,6 @@
 "use client";
 
-import { Ellipsis, House, PieChart, Plus, ReceiptText } from "lucide-react";
+import { Ellipsis, House, PieChart, Plus, ReceiptText, Repeat, UserRound, WalletCards } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -9,16 +9,26 @@ import { UserAvatar } from "@/components/ui/UserAvatar";
 import { useAuth } from "@/lib/auth";
 import { useRecurring } from "@/lib/use-recurring";
 
-const tabs = [
+const mainPages = [
   { href: "/", label: "Home", icon: House },
   { href: "/expenses", label: "Expenses", icon: ReceiptText },
   { href: "/budgets", label: "Budgets", icon: PieChart },
   // Groups returns here with real, saved groups in roadmap Step 15.
-  { href: "/more", label: "More", icon: Ellipsis },
 ];
 
+/** Desktop sidebar: every page listed directly, no "More" in between. */
+const sidebarPages = [
+  ...mainPages,
+  { href: "/recurring", label: "Recurring expenses", icon: Repeat },
+  { href: "/wallets", label: "Wallets & categories", icon: WalletCards },
+  { href: "/profile", label: "Profile & settings", icon: UserRound },
+];
+
+/** Phone bottom bar: only four fit, so the rest sit behind "More". */
+const tabs = [...mainPages, { href: "/more", label: "More", icon: Ellipsis }];
+
 // Pages reached from More keep the More tab highlighted.
-const moreRoutes = ["/more", "/recurring", "/profile"];
+const moreRoutes = ["/more", "/recurring", "/wallets", "/profile"];
 
 function isActive(href: string, pathname: string) {
   if (href === "/more") return moreRoutes.some((r) => pathname.startsWith(r));
@@ -57,9 +67,9 @@ export function AppShell({
         </Link>
         <nav aria-label="Main" className="flex-1 overflow-y-auto px-3 py-4">
           <ul className="flex flex-col gap-1">
-            {tabs.map((t) => {
+            {sidebarPages.map((t) => {
               const active = isActive(t.href, pathname);
-              const badge = t.href === "/more" && dueCount > 0;
+              const badge = t.href === "/recurring" && dueCount > 0;
               return (
                 <li key={t.href}>
                   <Link

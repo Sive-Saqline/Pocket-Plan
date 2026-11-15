@@ -10,6 +10,15 @@ export function formatTaka(amount: number, { signed = false } = {}): string {
   return `${amount > 0 ? "+" : "−"}${body}`;
 }
 
+/** Parses a wallet balance: any amount with ≤2 decimals, negative allowed; null if invalid. */
+export function parseBalance(input: string): number | null {
+  const trimmed = input.replace(/,/g, "").replace(/^−/, "-").trim();
+  if (trimmed === "") return 0;
+  if (!/^-?\d+(\.\d{1,2})?$/.test(trimmed)) return null;
+  const value = Number(trimmed);
+  return Math.abs(value) <= 1_000_000_000 ? value : null;
+}
+
 /** Parses user input into taka; null when not a positive amount with ≤2 decimals. */
 export function parseTaka(input: string): number | null {
   const trimmed = input.replace(/,/g, "").trim();

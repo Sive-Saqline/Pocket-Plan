@@ -10,6 +10,8 @@ export interface Wallet {
   id: string;
   name: string;
   type: WalletType;
+  /** Typed in by the user, informational only (PRD Decision 6); may be negative. */
+  balance: number;
 }
 
 export interface Expense {

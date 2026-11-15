@@ -1,6 +1,6 @@
 # Step 12: Wallets & categories: complete
 
-**Status:** ⏳ Not started · **PRD:** 6.3, 6.4 · **Depends on:** Step 11
+**Status:** 🟡 Built, waiting for your test (2026-11-13) · **PRD:** 6.3, 6.4 · **Depends on:** Step 11
 
 ## Goal
 Finish managing wallets and categories.
@@ -16,8 +16,13 @@ Finish managing wallets and categories.
 ## Out of scope
 Balances that update automatically from expenses (needs income tracking, deferred in PRD §14).
 
+## What was built
+- API: edit and delete wallets (name, type, balance), add/edit/delete categories (name, 23 icons), with the rules above plus: last wallet / last category can't be deleted, and deleting a category removes its budgets.
+- Web: **More → Wallets & categories** (`/wallets`), with add/edit sheets and a delete confirmation; wallet balances and a total.
+- Tests: 13 new API tests (`test/wallets.e2e-spec.ts`).
+
 ## Done when
-- [ ] Wallets and categories can be fully managed from the app
-- [ ] Deletion rules enforced and tested
+- [x] Wallets and categories can be fully managed from the app (pending your manual test)
+- [x] Deletion rules enforced and tested
 - [ ] Bugs found during this step fixed and logged in [ongoing-bug-fixing.md](ongoing-bug-fixing.md)
 - [ ] Lint, tests, and build pass

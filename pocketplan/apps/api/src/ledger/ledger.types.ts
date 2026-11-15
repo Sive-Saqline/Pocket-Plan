@@ -9,6 +9,37 @@ export const ACCOUNT_TYPES = [
 ] as const;
 export type AccountType = (typeof ACCOUNT_TYPES)[number];
 
+/**
+ * Icons a category can use. The web app draws each key
+ * (apps/web/src/components/ui/icons.tsx); keep the two lists in sync.
+ */
+export const CATEGORY_ICONS = [
+  'food',
+  'transport',
+  'bills',
+  'shopping',
+  'health',
+  'education',
+  'entertainment',
+  'savings',
+  'misc',
+  'home',
+  'groceries',
+  'coffee',
+  'fuel',
+  'phone',
+  'travel',
+  'gift',
+  'family',
+  'pets',
+  'sports',
+  'beauty',
+  'work',
+  'charity',
+  'tag',
+] as const;
+export type CategoryIcon = (typeof CATEGORY_ICONS)[number];
+
 export interface Category {
   id: string;
   name: string;

@@ -15,12 +15,15 @@ import {
 import { AuthGuard, CurrentUserId } from '../auth/auth.guard';
 import {
   CopyBudgetsDto,
+  CreateCategoryDto,
   CreateExpenseDto,
   CreateWalletDto,
   ListExpensesQuery,
   MonthQuery,
   SetBudgetDto,
+  UpdateCategoryDto,
   UpdateExpenseDto,
+  UpdateWalletDto,
 } from './ledger.dto';
 import { LedgerService } from './ledger.service';
 
@@ -35,6 +38,32 @@ export class LedgerController {
     return this.ledger.categories(userId);
   }
 
+  @Post('categories')
+  createCategory(
+    @CurrentUserId() userId: string,
+    @Body() body: CreateCategoryDto,
+  ) {
+    return this.ledger.createCategory(userId, body);
+  }
+
+  @Patch('categories/:id')
+  updateCategory(
+    @CurrentUserId() userId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: UpdateCategoryDto,
+  ) {
+    return this.ledger.updateCategory(userId, id, body);
+  }
+
+  @Delete('categories/:id')
+  @HttpCode(204)
+  async deleteCategory(
+    @CurrentUserId() userId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    await this.ledger.deleteCategory(userId, id);
+  }
+
   @Get('accounts')
   wallets(@CurrentUserId() userId: string) {
     return this.ledger.wallets(userId);
@@ -43,6 +72,24 @@ export class LedgerController {
   @Post('accounts')
   createWallet(@CurrentUserId() userId: string, @Body() body: CreateWalletDto) {
     return this.ledger.createWallet(userId, body);
+  }
+
+  @Patch('accounts/:id')
+  updateWallet(
+    @CurrentUserId() userId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: UpdateWalletDto,
+  ) {
+    return this.ledger.updateWallet(userId, id, body);
+  }
+
+  @Delete('accounts/:id')
+  @HttpCode(204)
+  async deleteWallet(
+    @CurrentUserId() userId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    await this.ledger.deleteWallet(userId, id);
   }
 
   @Get('expenses')

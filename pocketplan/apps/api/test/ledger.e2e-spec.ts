@@ -78,7 +78,8 @@ describe('Personal expenses (e2e)', () => {
       .post('/accounts')
       .send({ name: 'BKASH', type: 'MOBILE_WALLET' })
       .expect(409);
-    expect(dup.body.message).toBe('You already have a wallet called BKASH');
+    // names the existing wallet, as it's spelled
+    expect(dup.body.message).toBe('You already have a wallet called bKash');
   });
 
   it('creates, lists, updates and deletes an expense', async () => {

@@ -1,16 +1,28 @@
 import {
+  Baby,
   Banknote,
+  BriefcaseBusiness,
   Car,
   Clapperboard,
+  Coffee,
   CreditCard,
+  Dumbbell,
+  Fuel,
+  Gift,
   GraduationCap,
+  HandHeart,
   HeartPulse,
+  House,
   Landmark,
   Package,
+  PawPrint,
   PiggyBank,
+  Plane,
   ReceiptText,
   ShoppingBag,
+  ShoppingBasket,
   Smartphone,
+  Sparkles,
   Tag,
   UtensilsCrossed,
   Wallet,
@@ -25,17 +37,39 @@ import type { WalletType } from "@/lib/ledger";
  * emoji they were created with, so those map to the same keys.
  */
 
-const categoryIcons: Record<string, LucideIcon> = {
-  food: UtensilsCrossed,
-  transport: Car,
-  bills: ReceiptText,
-  shopping: ShoppingBag,
-  health: HeartPulse,
-  education: GraduationCap,
-  entertainment: Clapperboard,
-  savings: PiggyBank,
-  misc: Package,
-};
+/**
+ * The icons a category can use, in picker order. The API accepts exactly
+ * these keys (apps/api/src/ledger/ledger.types.ts, CATEGORY_ICONS).
+ */
+export const CATEGORY_ICON_OPTIONS: { key: string; label: string; icon: LucideIcon }[] = [
+  { key: "food", label: "Food", icon: UtensilsCrossed },
+  { key: "groceries", label: "Groceries", icon: ShoppingBasket },
+  { key: "coffee", label: "Coffee & snacks", icon: Coffee },
+  { key: "transport", label: "Transport", icon: Car },
+  { key: "fuel", label: "Fuel", icon: Fuel },
+  { key: "travel", label: "Travel", icon: Plane },
+  { key: "bills", label: "Bills", icon: ReceiptText },
+  { key: "home", label: "Home & rent", icon: House },
+  { key: "phone", label: "Phone & internet", icon: Smartphone },
+  { key: "shopping", label: "Shopping", icon: ShoppingBag },
+  { key: "health", label: "Health", icon: HeartPulse },
+  { key: "beauty", label: "Personal care", icon: Sparkles },
+  { key: "sports", label: "Fitness", icon: Dumbbell },
+  { key: "education", label: "Education", icon: GraduationCap },
+  { key: "work", label: "Work", icon: BriefcaseBusiness },
+  { key: "entertainment", label: "Entertainment", icon: Clapperboard },
+  { key: "family", label: "Family & kids", icon: Baby },
+  { key: "pets", label: "Pets", icon: PawPrint },
+  { key: "gift", label: "Gifts", icon: Gift },
+  { key: "charity", label: "Charity", icon: HandHeart },
+  { key: "savings", label: "Savings", icon: PiggyBank },
+  { key: "misc", label: "Miscellaneous", icon: Package },
+  { key: "tag", label: "Other", icon: Tag },
+];
+
+const categoryIcons: Record<string, LucideIcon> = Object.fromEntries(
+  CATEGORY_ICON_OPTIONS.map((o) => [o.key, o.icon]),
+);
 
 const legacyEmojiKeys: Record<string, string> = {
   "🍔": "food",

@@ -61,6 +61,15 @@ Signed-in users get a **Home** dashboard (this month vs last, spending by catego
 - New users get the 9 default categories (PRD §6.3) and a Cash wallet.
 - **Storage:** Supabase tables `accounts`, `categories`, `expenses`, `budgets`, `recurring_expenses` (through `PrismaLedgerStore`). API tests use temporary JSON files instead, so they need no database.
 
+## Wallets & categories
+
+**More → Wallets & categories**: add, rename and delete wallets and categories; set a wallet's type and **balance** (typed in by you and informational only, PRD Decision 6; negative allowed, e.g. a credit card). Custom categories pick from 23 icons.
+
+- Deleting a wallet or category that expenses or recurring expenses still use is refused, with a message saying how many use it. Nothing is deleted silently.
+- Your last wallet and last category can't be deleted. Deleting a category removes its budgets too.
+- Names are unique per user, ignoring upper/lower case.
+- API: `POST /accounts` (with optional `balance`), `PATCH|DELETE /accounts/:id`, `POST /categories`, `PATCH|DELETE /categories/:id`. Icon keys: `CATEGORY_ICONS` in `apps/api/src/ledger/ledger.types.ts` (keep in sync with `CATEGORY_ICON_OPTIONS` in the web app).
+
 ## Budgets
 
 **Budgets** tab: set a monthly limit per category, plan one month ahead, and **Copy** last month's budgets in one tap. Bars follow EXPERIENCE.md §5.6: teal under 80%, amber 80–99%, red at 100%+, always with a text label too. Home shows "৳X of ৳Y budgeted" and your fullest budgets; the Add Expense sheet warns *"This puts Transport at 105% of budget."* before you save.
