@@ -22,6 +22,7 @@ import {
   ListExpensesQuery,
   MonthQuery,
   SetBudgetDto,
+  SetSavingsGoalDto,
   UpdateCategoryDto,
   UpdateExpenseDto,
   UpdateWalletDto,
@@ -149,6 +150,29 @@ export class LedgerController {
   @Post('budgets/copy')
   copyBudgets(@CurrentUserId() userId: string, @Body() body: CopyBudgetsDto) {
     return this.ledger.copyBudgets(userId, body);
+  }
+
+  /** Target, saved (from Savings-category expenses) and progress for one month. */
+  @Get('savings-goals')
+  savingsGoal(@CurrentUserId() userId: string, @Query() { month }: MonthQuery) {
+    return this.ledger.savingsGoal(userId, month);
+  }
+
+  @Put('savings-goals')
+  setSavingsGoal(
+    @CurrentUserId() userId: string,
+    @Body() body: SetSavingsGoalDto,
+  ) {
+    return this.ledger.setSavingsGoal(userId, body);
+  }
+
+  @Delete('savings-goals')
+  @HttpCode(204)
+  async deleteSavingsGoal(
+    @CurrentUserId() userId: string,
+    @Query() { month }: MonthQuery,
+  ) {
+    await this.ledger.deleteSavingsGoal(userId, month);
   }
 
   @Get('reports/summary')

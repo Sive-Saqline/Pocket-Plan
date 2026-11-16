@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { UserLedger } from './ledger.types';
+import { SAVINGS_KEY, UserLedger } from './ledger.types';
 
 // PRD §6.3 defaults. `icon` is a key the web app maps to an icon
 // (apps/web/src/components/ui/icons.tsx); older accounts may still hold emojis.
@@ -24,6 +24,8 @@ export function newLedger(now = new Date().toISOString()): UserLedger {
       id: randomUUID(),
       name,
       icon,
+      // Mirrors the sign-up trigger (migration *_savings_category).
+      systemKey: icon === SAVINGS_KEY ? SAVINGS_KEY : null,
       createdAt: now,
     })),
     accounts: [
@@ -39,6 +41,7 @@ export function newLedger(now = new Date().toISOString()): UserLedger {
     expenses: [],
     budgets: [],
     recurring: [],
+    savings: [],
   };
 }
 

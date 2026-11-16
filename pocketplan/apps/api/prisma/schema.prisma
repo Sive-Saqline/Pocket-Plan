@@ -101,6 +101,9 @@ model Category {
   userId    String   @map("user_id") @db.Uuid
   name      String
   icon      String
+  // 'savings' marks the category savings goals count (PRD §6.8); it survives
+  // renames and can't be deleted. NULL for every other category.
+  systemKey String?  @map("system_key")
   createdAt DateTime @default(now()) @map("created_at")
 
   user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -109,6 +112,7 @@ model Category {
   recurringExpenses RecurringExpense[]
 
   @@unique([userId, name])
+  @@unique([userId, systemKey])
   @@map("categories")
 }
 
@@ -186,7 +190,8 @@ model RecurringExpense {
   @@map("recurring_expenses")
 }
 
-// saved_amount is computed from "Savings"-category expenses, never stored.
+// saved_amount is computed from expenses in the category whose system_key is
+// 'savings', never stored.
 model SavingsGoal {
   id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   userId       String   @map("user_id") @db.Uuid

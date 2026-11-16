@@ -4,6 +4,8 @@ export interface Category {
   id: string;
   name: string;
   icon: string;
+  /** "savings" on the one category savings goals count; it can be renamed but not deleted. */
+  systemKey?: "savings" | null;
   /** How many expenses / recurring expenses use it (GET /categories). */
   expenseCount?: number;
   recurringCount?: number;
@@ -45,6 +47,22 @@ export interface MonthSummary {
   byWallet: { accountId: string; name: string; type: WalletType; total: number }[];
   recent: Expense[];
   budget: { planned: number; spentOnBudgeted: number; lines: BudgetLine[] };
+  savings: SavingsView;
+}
+
+export type SavingsStatus = "none" | "saving" | "reached";
+
+/** GET /savings-goals: target vs. what was logged under the Savings category (PRD §6.8). */
+export interface SavingsView {
+  month: string;
+  target: number | null;
+  saved: number;
+  /** target − saved, never below 0; null without a target. */
+  remaining: number | null;
+  /** Whole percent saved, rounded down; may go past 100. */
+  percent: number | null;
+  status: SavingsStatus;
+  category: { id: string; name: string; icon: string } | null;
 }
 
 export type BudgetStatus = "none" | "under" | "near" | "over";

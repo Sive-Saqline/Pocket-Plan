@@ -11,11 +11,13 @@ import { BudgetBar, BudgetLabel } from "@/components/budgets/BudgetBar";
 import { ExpenseRow } from "@/components/expenses/ExpenseRow";
 import { ExpenseSheet } from "@/components/expenses/ExpenseSheet";
 import { GroupShareCard } from "./GroupShareCard";
+import { SavingsCard } from "@/components/savings/SavingsCard";
+import { SavingsSheet } from "@/components/savings/SavingsSheet";
 import { Card, ErrorBanner, SkeletonRows } from "@/components/ui/Card";
 import { Toast, useToast } from "@/components/ui/Toast";
 import { useAuth } from "@/lib/auth";
 import { currentMonth, daysLeft, monthLabel } from "@/lib/dates";
-import type { Expense, MonthSummary } from "@/lib/ledger";
+import type { Expense, MonthSummary, SavingsView } from "@/lib/ledger";
 import { formatTaka } from "@/lib/money";
 import { useApiData } from "@/lib/use-api-data";
 import { usePersonalData } from "@/lib/use-personal-data";
@@ -34,6 +36,7 @@ export function HomeScreen() {
   const [sheet, setSheet] = useState<{ open: boolean; expense: Expense | null }>({ open: false, expense: null });
   const recurring = useRecurring();
   const [reviewing, setReviewing] = useState<RecurringExpense[] | null>(null);
+  const [editingSavings, setEditingSavings] = useState<SavingsView | null>(null);
 
   const firstName = state.user?.name.split(" ")[0] ?? "";
   const s = summary.data;
@@ -171,6 +174,8 @@ export function HomeScreen() {
             )}
           </Card>
 
+          <SavingsCard savings={s.savings} className="order-2" onEdit={() => setEditingSavings(s.savings)} />
+
           <Card
             title="Recent expenses"
             className="order-4"
@@ -247,6 +252,15 @@ export function HomeScreen() {
           notifyRecurringChanged();
           const text = confirmSummary(result);
           if (text) toast.show(text);
+        }}
+      />
+      <SavingsSheet
+        savings={editingSavings}
+        onClose={() => setEditingSavings(null)}
+        onSaved={(message) => {
+          setEditingSavings(null);
+          summary.reload();
+          toast.show(message);
         }}
       />
       <Toast message={toast.message} />

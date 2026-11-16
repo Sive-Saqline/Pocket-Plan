@@ -13,7 +13,9 @@ import { Toast, useToast } from "@/components/ui/Toast";
 import { ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { currentMonth, monthLabel, shiftMonth } from "@/lib/dates";
-import type { BudgetLine, BudgetView } from "@/lib/ledger";
+import type { BudgetLine, BudgetView, SavingsView } from "@/lib/ledger";
+import { SavingsCard } from "@/components/savings/SavingsCard";
+import { SavingsSheet } from "@/components/savings/SavingsSheet";
 import { formatTaka } from "@/lib/money";
 import { useApiData } from "@/lib/use-api-data";
 import { BudgetBar, BudgetLabel, StatusDot } from "./BudgetBar";
@@ -32,6 +34,8 @@ export function BudgetsScreen() {
 
   const view = useApiData<BudgetView>(`/budgets?month=${month}`);
   const previous = useApiData<BudgetView>(`/budgets?month=${lastMonth}`);
+  const savings = useApiData<SavingsView>(`/savings-goals?month=${month}`);
+  const [editingSavings, setEditingSavings] = useState<SavingsView | null>(null);
   const toast = useToast();
   const [editing, setEditing] = useState<BudgetLine | null>(null);
   const [copying, setCopying] = useState(false);
@@ -40,6 +44,8 @@ export function BudgetsScreen() {
     router.replace(m === thisMonth ? pathname : `${pathname}?month=${m}`, { scroll: false });
 
   const v = view.data;
+  // Hide last month's numbers while the new month loads.
+  const monthSavings = savings.data?.month === month ? savings.data : null;
   const budgeted = v?.lines.filter((l) => l.planned !== null) ?? [];
   const unbudgeted = v?.lines.filter((l) => l.planned === null) ?? [];
   const canCopy = budgeted.length === 0 && (previous.data?.planned ?? 0) > 0;
@@ -99,6 +105,8 @@ export function BudgetsScreen() {
             </Card>
           )}
 
+          {monthSavings && <SavingsCard savings={monthSavings} onEdit={() => setEditingSavings(monthSavings)} />}
+
           {budgeted.length > 0 && (
             <ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-3" aria-label="Budgets">
               {budgeted.map((line) => (
@@ -156,6 +164,15 @@ export function BudgetsScreen() {
         onSaved={(message) => {
           setEditing(null);
           view.reload();
+          toast.show(message);
+        }}
+      />
+      <SavingsSheet
+        savings={editingSavings}
+        onClose={() => setEditingSavings(null)}
+        onSaved={(message) => {
+          setEditingSavings(null);
+          savings.reload();
           toast.show(message);
         }}
       />

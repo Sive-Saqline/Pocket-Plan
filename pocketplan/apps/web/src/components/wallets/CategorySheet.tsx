@@ -52,6 +52,8 @@ export function CategorySheet({
   const expenseCount = category?.expenseCount ?? 0;
   const recurringCount = category?.recurringCount ?? 0;
   const inUse = expenseCount + recurringCount > 0;
+  // Savings goals count this category's expenses, so it can be renamed but not deleted.
+  const isSavings = category?.systemKey === "savings";
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -149,6 +151,13 @@ export function CategorySheet({
           <CategoryIconGrid value={icon} onChange={setIcon} />
         </fieldset>
 
+        {isSavings && (
+          <p className="rounded-lg bg-surface-muted p-3 text-sm text-text-muted">
+            Your savings goal counts expenses in this category, so it can&apos;t be deleted. You can rename it or change its
+            icon.
+          </p>
+        )}
+
         {confirmDelete ? (
           <ConfirmDelete
             message={
@@ -184,7 +193,7 @@ export function CategorySheet({
           </ConfirmDelete>
         ) : (
           <div className="flex gap-2">
-            {category && (
+            {category && !isSavings && (
               <Button variant="ghost" className="text-danger hover:text-danger" onClick={() => setConfirmDelete(true)} disabled={busy}>
                 <Trash2 aria-hidden size={18} />
                 Delete

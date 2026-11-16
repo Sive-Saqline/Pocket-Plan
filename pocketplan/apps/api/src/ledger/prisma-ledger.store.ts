@@ -7,6 +7,7 @@ import type {
   Category,
   Expense,
   RecurringExpense,
+  SavingsGoal,
   UserLedger,
   Wallet,
 } from './ledger.types';
@@ -41,6 +42,7 @@ const toCategory = (userId: string, c: Category) => ({
   userId,
   name: c.name,
   icon: c.icon,
+  systemKey: c.systemKey ?? null,
   createdAt: new Date(c.createdAt),
 });
 
@@ -77,6 +79,19 @@ const toBudget = (userId: string, b: Budget) => {
     plannedAmount: b.plannedAmount,
     createdAt: new Date(b.createdAt),
     updatedAt: new Date(b.updatedAt),
+  };
+};
+
+const toSavingsGoal = (userId: string, g: SavingsGoal) => {
+  const [year, month] = g.month.split('-').map(Number);
+  return {
+    id: g.id,
+    userId,
+    month,
+    year,
+    targetAmount: g.targetAmount,
+    createdAt: new Date(g.createdAt),
+    updatedAt: new Date(g.updatedAt),
   };
 };
 
@@ -145,7 +160,7 @@ export class PrismaLedgerStore extends LedgerStore {
     const rows = await db.$queryRaw<UserLedger[]>`
       SELECT
         (SELECT coalesce(json_agg(json_build_object(
-            'id', c.id, 'name', c.name, 'icon', c.icon,
+            'id', c.id, 'name', c.name, 'icon', c.icon, 'systemKey', c.system_key,
             'createdAt', ${TS('c.created_at')}
           ) ORDER BY c.created_at, c.id), '[]'::json)
           FROM categories c WHERE c.user_id = u.id) AS categories,
@@ -177,7 +192,14 @@ export class PrismaLedgerStore extends LedgerStore {
             'isActive', r.is_active,
             'createdAt', ${TS('r.created_at')}, 'updatedAt', ${TS('r.updated_at')}
           ) ORDER BY r.created_at, r.id), '[]'::json)
-          FROM recurring_expenses r WHERE r.user_id = u.id) AS recurring
+          FROM recurring_expenses r WHERE r.user_id = u.id) AS recurring,
+        (SELECT coalesce(json_agg(json_build_object(
+            'id', g.id,
+            'month', g.year::text || '-' || lpad(g.month::text, 2, '0'),
+            'targetAmount', g.target_amount::float8,
+            'createdAt', ${TS('g.created_at')}, 'updatedAt', ${TS('g.updated_at')}
+          ) ORDER BY g.created_at, g.id), '[]'::json)
+          FROM savings_goals g WHERE g.user_id = u.id) AS savings
       FROM users u
       WHERE u.id = ${userId}::uuid
       ${lock ? Prisma.sql`FOR UPDATE` : Prisma.empty}`;
@@ -203,6 +225,7 @@ export class PrismaLedgerStore extends LedgerStore {
     const expenses = diff(before.expenses, after.expenses);
     const budgets = diff(before.budgets, after.budgets);
     const recurring = diff(before.recurring, after.recurring);
+    const savings = diff(before.savings, after.savings);
     const mine = (ids: string[]) => ({ where: { userId, id: { in: ids } } });
 
     if (expenses.removed.length)
@@ -211,6 +234,8 @@ export class PrismaLedgerStore extends LedgerStore {
       await tx.budget.deleteMany(mine(budgets.removed));
     if (recurring.removed.length)
       await tx.recurringExpense.deleteMany(mine(recurring.removed));
+    if (savings.removed.length)
+      await tx.savingsGoal.deleteMany(mine(savings.removed));
     if (categories.removed.length)
       await tx.category.deleteMany(mine(categories.removed));
     if (accounts.removed.length)
@@ -245,6 +270,14 @@ export class PrismaLedgerStore extends LedgerStore {
       const { id, ...data } = toRecurring(userId, r);
       await tx.recurringExpense.update({ where: { id }, data });
     }
+    for (const g of savings.changed) {
+      const { id, ...data } = toSavingsGoal(userId, g);
+      await tx.savingsGoal.update({ where: { id }, data });
+    }
+    if (savings.added.length)
+      await tx.savingsGoal.createMany({
+        data: savings.added.map((g) => toSavingsGoal(userId, g)),
+      });
     if (expenses.added.length)
       await tx.expense.createMany({
         data: expenses.added.map((e) => toExpense(userId, e)),

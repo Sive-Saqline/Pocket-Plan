@@ -120,6 +120,7 @@ export function WalletsScreen() {
                         {(c.expenseCount ?? 0) + (c.recurringCount ?? 0) > 0
                           ? `Used in ${usageText(c.expenseCount ?? 0, c.recurringCount ?? 0)}`
                           : "Not used yet"}
+                        {c.systemKey === "savings" && " · Counts as savings"}
                       </span>
                     </span>
                     <ChevronRight aria-hidden size={18} className="shrink-0 text-text-muted" />

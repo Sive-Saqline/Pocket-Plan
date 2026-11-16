@@ -13,6 +13,6 @@
     "db:generate": "npm run db:generate -w @pocketplan/api",
     "db:migrate": "npm run db:migrate -w @pocketplan/api",
     "db:studio": "npm run db:studio -w @pocketplan/api",
-    "test:e2e": "npm run test:e2e -w @pocketplan/api -- auth ledger recurring wallets"
+    "test:e2e": "npm run test:e2e -w @pocketplan/api -- auth ledger recurring wallets savings"
   }
 }

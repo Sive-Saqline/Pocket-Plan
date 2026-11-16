@@ -59,6 +59,7 @@ export class FileLedgerStore extends LedgerStore {
       // files written before budgets existed
       ledger.budgets ??= [];
       ledger.recurring ??= [];
+      ledger.savings ??= [];
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err;
       ledger = newLedger();

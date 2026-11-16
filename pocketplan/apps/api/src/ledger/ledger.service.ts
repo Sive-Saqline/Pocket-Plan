@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { budgetView } from './budgets';
+import { savingsView } from './savings';
 import {
   CopyBudgetsDto,
   CreateCategoryDto,
@@ -13,12 +14,13 @@ import {
   CreateWalletDto,
   ListExpensesQuery,
   SetBudgetDto,
+  SetSavingsGoalDto,
   UpdateCategoryDto,
   UpdateExpenseDto,
   UpdateWalletDto,
 } from './ledger.dto';
 import { LedgerStore } from './ledger.store';
-import { Expense, UserLedger } from './ledger.types';
+import { Category, Expense, SAVINGS_KEY, UserLedger } from './ledger.types';
 
 // Sums in integer paisa so ৳0.1 + ৳0.2 is exactly ৳0.3.
 const sum = (amounts: number[]) =>
@@ -102,10 +104,11 @@ export class LedgerService {
   createCategory(userId: string, { name, icon }: CreateCategoryDto) {
     return this.store.mutate(userId, (ledger) => {
       assertUniqueName(ledger.categories, name, 'a category');
-      const category = {
+      const category: Category = {
         id: randomUUID(),
         name,
         icon,
+        systemKey: null,
         createdAt: new Date().toISOString(),
       };
       ledger.categories.push(category);
@@ -138,6 +141,11 @@ export class LedgerService {
     return this.store.mutate(userId, (ledger) => {
       const category = ledger.categories.find((c) => c.id === id);
       if (!category) throw new NotFoundException('Category not found');
+      if (category.systemKey === SAVINGS_KEY) {
+        throw new ConflictException(
+          `${category.name} tracks your savings goal, so it can't be deleted. You can rename it.`,
+        );
+      }
       if (ledger.categories.length === 1) {
         throw new ConflictException(
           'You need at least one category. Add another before deleting this one.',
@@ -293,6 +301,40 @@ export class LedgerService {
     });
   }
 
+  async savingsGoal(userId: string, month: string) {
+    return savingsView(await this.store.read(userId), month);
+  }
+
+  /** Creates or replaces the savings target for one month. */
+  setSavingsGoal(userId: string, { month, targetAmount }: SetSavingsGoalDto) {
+    return this.store.mutate(userId, (ledger) => {
+      const now = new Date().toISOString();
+      const existing = ledger.savings.find((g) => g.month === month);
+      if (existing) {
+        Object.assign(existing, { targetAmount, updatedAt: now });
+      } else {
+        ledger.savings.push({
+          id: randomUUID(),
+          month,
+          targetAmount,
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
+      return savingsView(ledger, month);
+    });
+  }
+
+  deleteSavingsGoal(userId: string, month: string) {
+    return this.store.mutate(userId, (ledger) => {
+      const before = ledger.savings.length;
+      ledger.savings = ledger.savings.filter((g) => g.month !== month);
+      if (ledger.savings.length === before) {
+        throw new NotFoundException('No savings target for that month');
+      }
+    });
+  }
+
   /** Dashboard numbers for one month (YYYY-MM). */
   async summary(userId: string, month: string) {
     const ledger = await this.store.read(userId);
@@ -347,6 +389,7 @@ export class LedgerService {
         spentOnBudgeted: budget.spentOnBudgeted,
         lines: budget.lines.filter((l) => l.planned !== null),
       },
+      savings: savingsView(ledger, month),
     };
   }
 }

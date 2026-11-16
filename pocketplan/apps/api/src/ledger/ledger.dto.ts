@@ -178,6 +178,16 @@ export class SetBudgetDto {
   plannedAmount: number;
 }
 
+export class SetSavingsGoalDto {
+  @Matches(MONTH, { message: 'month must be YYYY-MM' })
+  month: string;
+
+  @IsNumber(money, { message: 'Amount must have at most 2 decimals' })
+  @IsPositive({ message: 'Target must be more than ৳0' })
+  @Max(10_000_000, { message: 'Amount is too large' })
+  targetAmount: number;
+}
+
 export class CopyBudgetsDto {
   @Matches(MONTH, { message: 'from must be YYYY-MM' })
   from: string;

@@ -45,8 +45,16 @@ export interface Category {
   name: string;
   /** Icon key, e.g. "food". Accounts created before Step 10 may hold an emoji. */
   icon: string;
+  /**
+   * 'savings' marks the one category savings goals count (PRD §6.8). It
+   * survives renames, and that category can't be deleted. null otherwise.
+   */
+  systemKey: SystemCategoryKey | null;
   createdAt: string;
 }
+
+export const SAVINGS_KEY = 'savings';
+export type SystemCategoryKey = typeof SAVINGS_KEY;
 
 /** A wallet (PRD "Accounts/Wallets"); balance is user-maintained, informational. */
 export interface Wallet {
@@ -99,6 +107,19 @@ export interface RecurringExpense {
   updatedAt: string;
 }
 
+/**
+ * Target for one month (PRD §6.8). The saved amount is never stored: it's the
+ * month's expenses in the Savings category (see savings.ts).
+ */
+export interface SavingsGoal {
+  id: string;
+  /** YYYY-MM */
+  month: string;
+  targetAmount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 /** Everything one user owns. Never shared across users (PRD §12). */
 export interface UserLedger {
   categories: Category[];
@@ -106,4 +127,5 @@ export interface UserLedger {
   expenses: Expense[];
   budgets: Budget[];
   recurring: RecurringExpense[];
+  savings: SavingsGoal[];
 }

@@ -4,10 +4,28 @@ import { UserLedger } from './ledger.types';
 const at = '2026-10-01T00:00:00.000Z';
 const ledger = (): UserLedger => ({
   categories: [
-    { id: 'food', name: 'Food', icon: 'food', createdAt: at },
-    { id: 'transport', name: 'Transport', icon: 'transport', createdAt: at },
-    { id: 'shopping', name: 'Shopping', icon: 'shopping', createdAt: at },
-    { id: 'health', name: 'Health', icon: 'health', createdAt: at },
+    { id: 'food', name: 'Food', icon: 'food', systemKey: null, createdAt: at },
+    {
+      id: 'transport',
+      name: 'Transport',
+      icon: 'transport',
+      systemKey: null,
+      createdAt: at,
+    },
+    {
+      id: 'shopping',
+      name: 'Shopping',
+      icon: 'shopping',
+      systemKey: null,
+      createdAt: at,
+    },
+    {
+      id: 'health',
+      name: 'Health',
+      icon: 'health',
+      systemKey: null,
+      createdAt: at,
+    },
   ],
   accounts: [],
   expenses: [
@@ -29,6 +47,7 @@ const ledger = (): UserLedger => ({
     updatedAt: at,
   })),
   recurring: [],
+  savings: [],
   budgets: [
     ['food', 6000, '2026-10'],
     ['transport', 750, '2026-10'],

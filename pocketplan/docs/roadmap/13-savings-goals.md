@@ -1,6 +1,6 @@
 # Step 13: Savings goals
 
-**Status:** ⏳ Not started · **PRD:** 6.8 · **Depends on:** Step 12
+**Status:** 🟡 Built, waiting for your test (2026-11-16) · **PRD:** 6.8 · **Depends on:** Step 12
 
 ## Goal
 Let the user set a monthly savings target and see progress towards it.
@@ -12,8 +12,16 @@ Let the user set a monthly savings target and see progress towards it.
 3. Handle the case where the user has renamed or deleted the "Savings" category (possible after Step 12): decide how the category is identified, e.g. a fixed system key. Add a migration if a new column is needed.
 4. Tests: the saved amount comes from expenses, month boundaries, no target set.
 
+## What was built (2026-11-16)
+- **Savings category = a system key, not a name.** New column `categories.system_key` (migration `20261116000100_savings_category`). Exactly one category per user has `'savings'`. Existing users: the category named "Savings" is marked; failing that, the oldest one with the savings icon; failing that, a new "Savings" category is created. The sign-up trigger marks it for new users.
+- **It can be renamed and its icon changed, but not deleted** (API returns 409; the Delete button is hidden and the sheet explains why). A new category called "Savings" doesn't take over.
+- **API:** `GET /savings-goals?month=`, `PUT /savings-goals` `{ month, targetAmount }`, `DELETE /savings-goals?month=`. The view returns target, saved, remaining, percent (rounded down, can pass 100) and status (`none` / `saving` / `reached`). `GET /reports/summary` now includes `savings` too, so Home needs no extra request.
+- **Saved amount** is the month's personal expenses in the Savings category, summed in paisa (exact). Group expenses don't count.
+- **Web:** "Savings goal" card on Home (current month) and on Budgets (any month, via the month switcher); a sheet to set, change or remove the target. Wallets & categories marks the Savings category "Counts as savings".
+- **Tests:** `src/ledger/savings.spec.ts` (6 unit tests) and `test/savings.e2e-spec.ts` (10 API tests): month boundaries, no target, exact decimals, rename, refused delete, validation, privacy.
+
 ## Done when
-- [ ] A target can be set per month; progress shows on Home
-- [ ] The saved amount is always calculated from expenses
+- [x] A target can be set per month; progress shows on Home (pending your manual test)
+- [x] The saved amount is always calculated from expenses
 - [ ] Bugs found during this step fixed and logged in [ongoing-bug-fixing.md](ongoing-bug-fixing.md)
-- [ ] Lint, tests, and build pass
+- [ ] Lint, tests, and build pass *(lint, type checks, `npm test` 89/89 and API e2e 54/54 pass; `npm run build` not run yet: stop your dev server first)*
