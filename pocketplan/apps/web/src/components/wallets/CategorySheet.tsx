@@ -6,6 +6,7 @@ import { TextField } from "@/components/auth/TextField";
 import { Button } from "@/components/ui/Button";
 import { CloseButton } from "@/components/ui/CloseButton";
 import { ConfirmDelete } from "@/components/ui/ConfirmDelete";
+import { CategoryIconGrid } from "@/components/ui/CategoryIconGrid";
 import { CATEGORY_ICON_OPTIONS } from "@/components/ui/icons";
 import { ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -13,15 +14,27 @@ import type { Category } from "@/lib/ledger";
 
 const KEYS = new Set(CATEGORY_ICON_OPTIONS.map((o) => o.key));
 
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
+
+/** "3 expenses and 1 recurring expense" */
+export function usageText(expenses: number, recurring: number) {
+  return [expenses && plural(expenses, "expense"), recurring && plural(recurring, "recurring expense")]
+    .filter(Boolean)
+    .join(" and ");
+}
+
 /** Add (category = null) or edit a category: name and icon; delete when editing. */
 export function CategorySheet({
   open,
   category,
+  categories,
   onClose,
   onSaved,
 }: {
   open: boolean;
   category: Category | null;
+  /** All of the user's categories, to choose where a deleted one's expenses go. */
+  categories: Category[];
   onClose: () => void;
   onSaved: (message: string) => void;
 }) {
@@ -33,6 +46,12 @@ export function CategorySheet({
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [moveTo, setMoveTo] = useState("");
+
+  const others = categories.filter((c) => c.id !== category?.id);
+  const expenseCount = category?.expenseCount ?? 0;
+  const recurringCount = category?.recurringCount ?? 0;
+  const inUse = expenseCount + recurringCount > 0;
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -45,11 +64,13 @@ export function CategorySheet({
       setFormError(null);
       setBusy(false);
       setConfirmDelete(false);
+      const rest = categories.filter((c) => c.id !== category?.id);
+      setMoveTo((rest.find((c) => c.name === "Miscellaneous") ?? rest[0])?.id ?? "");
       dialog.showModal();
     } else if (!open && dialog.open) {
       dialog.close();
     }
-  }, [open, category]);
+  }, [open, category, categories]);
 
   async function save(event: FormEvent) {
     event.preventDefault();
@@ -77,9 +98,10 @@ export function CategorySheet({
   async function remove() {
     if (!category) return;
     setBusy(true);
+    const target = inUse ? others.find((c) => c.id === moveTo) : undefined;
     try {
-      await request(`/categories/${category.id}`, { method: "DELETE" });
-      onSaved(`${category.name} deleted`);
+      await request(`/categories/${category.id}${target ? `?moveTo=${target.id}` : ""}`, { method: "DELETE" });
+      onSaved(target ? `${category.name} deleted; its items moved to ${target.name}` : `${category.name} deleted`);
     } catch (err) {
       setFormError(err instanceof ApiError ? err.message : "Couldn't delete. Try again.");
       setConfirmDelete(false);
@@ -124,36 +146,42 @@ export function CategorySheet({
 
         <fieldset>
           <legend className="mb-2 text-sm font-medium">Icon</legend>
-          <div role="radiogroup" aria-label="Icon" className="grid grid-cols-6 gap-2 sm:grid-cols-8">
-            {CATEGORY_ICON_OPTIONS.map((o) => {
-              const on = o.key === icon;
-              return (
-                <button
-                  key={o.key}
-                  type="button"
-                  role="radio"
-                  aria-checked={on}
-                  aria-label={o.label}
-                  title={o.label}
-                  onClick={() => setIcon(o.key)}
-                  className={`grid aspect-square min-h-11 place-items-center rounded-lg border ${
-                    on ? "border-accent bg-accent/10 text-accent ring-1 ring-accent" : "border-border text-text-muted hover:bg-surface-muted hover:text-text"
-                  }`}
-                >
-                  <o.icon aria-hidden size={20} strokeWidth={1.75} />
-                </button>
-              );
-            })}
-          </div>
+          <CategoryIconGrid value={icon} onChange={setIcon} />
         </fieldset>
 
         {confirmDelete ? (
           <ConfirmDelete
-            message={`Delete ${category?.name}? Its budgets are removed too. This can't be undone.`}
+            message={
+              inUse
+                ? `${category?.name} is used by ${usageText(expenseCount, recurringCount)}. Delete it and move ${
+                    expenseCount + recurringCount === 1 ? "it" : "them"
+                  } to another category? Its budgets are removed. This only affects your account.`
+                : `Delete ${category?.name}? Its budgets are removed too. This only affects your account.`
+            }
             busy={busy}
             onCancel={() => setConfirmDelete(false)}
             onConfirm={remove}
-          />
+          >
+            {inUse && (
+              <div>
+                <label htmlFor="category-move-to" className="mb-1.5 block text-sm font-medium">
+                  Move to
+                </label>
+                <select
+                  id="category-move-to"
+                  value={moveTo}
+                  onChange={(e) => setMoveTo(e.target.value)}
+                  className="h-11 w-full rounded-lg border border-border bg-surface px-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                >
+                  {others.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </ConfirmDelete>
         ) : (
           <div className="flex gap-2">
             {category && (

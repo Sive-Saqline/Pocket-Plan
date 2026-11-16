@@ -352,7 +352,7 @@ Every AI feature below follows the same contract: the backend calls the Anthropi
 |---|---|---|
 | 7 | Product direction | Option D (collaborative groups + AI layer) selected over a single-user-only or collaboration-only path, after evaluating four options — see Section 1. |
 | 8 | Personal vs. group data model | One expenses table serves both; a personal expense is a group-less expense with the owner as sole participant, rather than a separate schema. |
-| 9 | Split types for MVP | Equal split and "just me" only. Percentage and exact-amount custom splits deferred — see Section 14. |
+| 9 | Split types for MVP | ~~Equal split and "just me" only.~~ **Revised 2026-11-16:** four methods ship: equal (one person = "just me"), exact amounts, percentages, and shares. Shares are stored per person in taka, so balances (§9) work the same for all four. |
 | 10 | Currency for groups | Stays ৳ BDT only for v4, including the trip use case, despite that being the one scenario that would benefit most from multi-currency — explicitly deferred, not overlooked. |
 | 11 | AI provider | Anthropic Claude API, called server-side only; every AI output is a suggestion, never auto-saved. |
 | 12 | Build sequencing | Collaborative core (groups, splitting, settlement) ships and is tested before any AI feature is layered on — money-correctness first, intelligence second. See Section 15. |

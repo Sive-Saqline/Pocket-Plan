@@ -4,6 +4,9 @@ export interface Category {
   id: string;
   name: string;
   icon: string;
+  /** How many expenses / recurring expenses use it (GET /categories). */
+  expenseCount?: number;
+  recurringCount?: number;
 }
 
 export interface Wallet {

@@ -1,20 +1,26 @@
 "use client";
 
+import type { ReactNode } from "react";
+
 /** Inline "Are you sure?" box shown inside a sheet before deleting something. */
 export function ConfirmDelete({
   message,
   busy,
   onCancel,
   onConfirm,
+  children,
 }: {
   message: string;
   busy: boolean;
   onCancel: () => void;
   onConfirm: () => void;
+  /** Extra controls between the message and the buttons (e.g. "move to"). */
+  children?: ReactNode;
 }) {
   return (
     <div role="alertdialog" aria-label="Confirm delete" className="flex flex-col gap-3 rounded-lg border border-danger/40 bg-danger/10 p-3">
       <p className="text-sm font-medium">{message}</p>
+      {children}
       <div className="flex gap-2">
         <button
           type="button"

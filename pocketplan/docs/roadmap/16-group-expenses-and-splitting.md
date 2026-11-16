@@ -1,6 +1,8 @@
 # Step 16: Group expenses & splitting
 
-**Status:** ⏳ Not started · **PRD:** 6.6, 6.12 · **Depends on:** Step 15
+**Status:** 🟡 Built, waiting for your test (2026-11-16) · **PRD:** 6.6, 6.12 · **Depends on:** Step 15
+
+> Built 2026-11-16 with all four split methods: equal, exact amounts, percentages and shares (percentage and exact moved into scope).
 
 ## Goal
 Log expenses inside a group and split them between members.

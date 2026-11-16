@@ -1,6 +1,8 @@
 # Step 17: Balances, settlements & group budgets
 
-**Status:** ⏳ Not started · **PRD:** 6.13, 9 · **Depends on:** Step 16
+**Status:** 🟡 Built, waiting for your test (2026-11-16) · **PRD:** 6.13, 9 · **Depends on:** Step 16
+
+> Built 2026-11-16. Reports: your group share is a separate card on Home (`/reports/groups`) until Step 14 adds the Reports screen.
 
 ## Goal
 Finish the group features: who owes whom, Settle Up, and a monthly group budget. After this step, groups are complete and tested, which the PRD requires before any AI work (Decision 12).

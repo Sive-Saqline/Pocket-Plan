@@ -18,6 +18,7 @@ import {
   CreateCategoryDto,
   CreateExpenseDto,
   CreateWalletDto,
+  DeleteCategoryQuery,
   ListExpensesQuery,
   MonthQuery,
   SetBudgetDto,
@@ -55,13 +56,15 @@ export class LedgerController {
     return this.ledger.updateCategory(userId, id, body);
   }
 
+  /** ?moveTo=<categoryId> moves the category's expenses and recurring expenses there first. */
   @Delete('categories/:id')
   @HttpCode(204)
   async deleteCategory(
     @CurrentUserId() userId: string,
     @Param('id', ParseUUIDPipe) id: string,
+    @Query() { moveTo }: DeleteCategoryQuery,
   ) {
-    await this.ledger.deleteCategory(userId, id);
+    await this.ledger.deleteCategory(userId, id, moveTo);
   }
 
   @Get('accounts')

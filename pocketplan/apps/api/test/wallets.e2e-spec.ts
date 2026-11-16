@@ -178,12 +178,86 @@ describe('Wallets & categories (e2e)', () => {
       );
     });
 
-    it('refuses to delete a category that is in use', async () => {
+    it('starts every new user with the 9 default categories', async () => {
+      const fresh = t.signUp('Fresh');
+      expect((await list(fresh, '/categories')).map((c) => c.name)).toEqual([
+        'Food',
+        'Transport',
+        'Bills',
+        'Shopping',
+        'Health',
+        'Education',
+        'Entertainment',
+        'Savings',
+        'Miscellaneous',
+      ]);
+    });
+
+    it('shows how often each category is used', async () => {
+      const cats = (await as(rafi).get('/categories').expect(200)).body as {
+        name: string;
+        expenseCount: number;
+        recurringCount: number;
+      }[];
+      const food = cats.find((c) => c.name === 'Food')!;
+      const bills = cats.find((c) => c.name === 'Bills')!;
+      expect([food.expenseCount, food.recurringCount]).toEqual([1, 0]);
+      expect([bills.expenseCount, bills.recurringCount]).toEqual([0, 1]);
+    });
+
+    it('asks where to move expenses before deleting a category in use', async () => {
       const food = await byName(rafi, '/categories', 'Food');
       const res = await as(rafi).delete(`/categories/${food.id}`).expect(409);
       expect(res.body.message).toBe(
-        'Food is used by 1 expense. Move or delete it first.',
+        'Food is used by 1 expense. Choose a category to move it to.',
       );
+      await as(rafi)
+        .delete(`/categories/${food.id}?moveTo=${food.id}`)
+        .expect(400);
+      await as(rafi)
+        .delete(`/categories/${food.id}?moveTo=not-a-uuid`)
+        .expect(400);
+    });
+
+    it('moves expenses and recurring expenses, then deletes the category', async () => {
+      const shopping = await byName(rafi, '/categories', 'Shopping');
+      const bills = await byName(rafi, '/categories', 'Bills');
+      const misc = await byName(rafi, '/categories', 'Miscellaneous');
+      const cash = await byName(rafi, '/accounts', 'Cash');
+      const bag = await as(rafi)
+        .post('/expenses')
+        .send({
+          amount: 900,
+          categoryId: shopping.id,
+          accountId: cash.id,
+          expenseDate: '2026-11-11',
+        })
+        .expect(201);
+      await as(rafi)
+        .delete(`/categories/${shopping.id}?moveTo=${misc.id}`)
+        .expect(204);
+      const moved = (await list(rafi, '/expenses')).find(
+        (e) => e.id === bag.body.id,
+      ) as unknown as { categoryId: string };
+      expect(moved.categoryId).toBe(misc.id);
+
+      // the Internet recurring expense moves too
+      await as(rafi)
+        .delete(`/categories/${bills.id}?moveTo=${misc.id}`)
+        .expect(204);
+      const recurring = (await as(rafi).get('/recurring-expenses').expect(200))
+        .body as { categoryId: string }[];
+      expect(recurring.every((r) => r.categoryId === misc.id)).toBe(true);
+    });
+
+    it("never touches another user's categories", async () => {
+      // Rafi removed Shopping and Bills; Nusrat still has all nine.
+      const mine = (await list(rafi, '/categories')).map((c) => c.name);
+      expect(mine).not.toContain('Shopping');
+      expect(mine).not.toContain('Bills');
+      const hers = (await list(nusrat, '/categories')).map((c) => c.name);
+      expect(hers).toHaveLength(9);
+      expect(hers).toEqual(expect.arrayContaining(['Shopping', 'Bills']));
     });
 
     it('deletes an unused category together with its budgets', async () => {

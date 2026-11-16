@@ -65,10 +65,13 @@ Signed-in users get a **Home** dashboard (this month vs last, spending by catego
 
 **More → Wallets & categories**: add, rename and delete wallets and categories; set a wallet's type and **balance** (typed in by you and informational only, PRD Decision 6; negative allowed, e.g. a credit card). Custom categories pick from 23 icons.
 
-- Deleting a wallet or category that expenses or recurring expenses still use is refused, with a message saying how many use it. Nothing is deleted silently.
+- Every new user starts with the 9 default categories (database trigger); after that each user keeps, adds and deletes their own. Nothing affects other users.
+- Each category shows how often it's used (`GET /categories` returns `expenseCount` and `recurringCount`).
+- Deleting a category that's in use asks where its expenses and recurring expenses should go (`DELETE /categories/:id?moveTo=<id>`); they move and the category is deleted in one transaction. Without `moveTo` the API refuses and says how many use it.
+- Deleting a wallet that expenses or recurring expenses still use is refused, with a message saying how many use it. Nothing is deleted silently.
 - Your last wallet and last category can't be deleted. Deleting a category removes its budgets too.
 - Names are unique per user, ignoring upper/lower case.
-- API: `POST /accounts` (with optional `balance`), `PATCH|DELETE /accounts/:id`, `POST /categories`, `PATCH|DELETE /categories/:id`. Icon keys: `CATEGORY_ICONS` in `apps/api/src/ledger/ledger.types.ts` (keep in sync with `CATEGORY_ICON_OPTIONS` in the web app).
+- API: `POST /accounts` (with optional `balance`), `PATCH|DELETE /accounts/:id`, `POST /categories`, `PATCH /categories/:id`, `DELETE /categories/:id[?moveTo=<id>]`. Icon keys: `CATEGORY_ICONS` in `apps/api/src/ledger/ledger.types.ts` (keep in sync with `CATEGORY_ICON_OPTIONS` in the web app).
 
 ## Budgets
 
@@ -90,6 +93,23 @@ Tap your avatar (top right), or **More → Profile & settings**: **add, change o
 - API: `PATCH /auth/me` (`name`, `preferences.theme`), `POST /auth/change-password`, `PUT /auth/me/avatar` (`{ image: "data:image/jpeg;base64,…" }`) and `DELETE /auth/me/avatar`. The API checks the image's real file type and caps it at 64 KB; `GET /auth/me` returns it as `avatarUrl`.
 - **Storage:** photos are in the public Supabase Storage bucket `avatars` (random file names; only the API can upload or delete).
 
+## Groups & shared expenses
+
+Groups (roommates, family, a trip) share expenses, split them, and track who owes whom. API in [apps/api/src/groups/](apps/api/src/groups/), screens in [apps/web/src/components/group/](apps/web/src/components/group/), data rules in migration `20261116000000_groups_and_sharing`.
+
+- **Groups & roles:** `POST/GET /groups`, `GET/PATCH/DELETE /groups/:id`. The creator is OWNER. Owners invite, remove members, change roles, rename and set a monthly budget; everyone can add expenses and settle up. A group always keeps at least one owner. A group can only be deleted while it has no expenses or payments.
+- **Members:** `PATCH /groups/:id/members/:userId` (role), `DELETE /groups/:id/members/:userId` (remove, or leave with your own id). Only people who are settled up (balance ৳0) can leave or be removed. They keep their membership row (`left_at`), so past expenses still show them; an expense involving someone who left can't be changed.
+- **Invites:** `POST /groups/:id/invites` with `{ email }` or `{}` for a shareable link (7 days; a new link replaces the old one; only a hash of the token is stored).
+  - New email: Supabase's own "Invite user" email (default mailer, rate-limited). The link lands on `/auth/accept-invite`, where they pick a name and password, then join.
+  - Email that already has an account: the invite waits on their Groups page (`GET /invites/received`, accept/decline). Supabase's default mailer can only send auth emails.
+  - Links: `/invite/<token>` (`GET /invites/token/:token`, `POST .../accept`). Email invites are single-use and only work for that email's account.
+  - Supabase setting needed: Authentication → URL Configuration → Redirect URLs must include `http://localhost:3000/**` (and the production URL later).
+- **Shared expenses:** `GET/POST /groups/:id/expenses`, `PATCH/DELETE /groups/:id/expenses/:expenseId`. Four split methods: `EQUAL` (one person = "just me"), `EXACT` (taka per person, must add up), `PERCENTAGE` (must total 100), `SHARES` (e.g. 2:1). Shares are computed in whole paisa (leftovers to the largest remainders) by [split.ts](apps/api/src/balances/split.ts), saved with the expense in one transaction, and the database re-checks at commit that they add up. Group expenses use a shared category key, never anyone's personal category or wallet, so deleting those never touches group history. The person who added or paid an expense can edit it; owners can also delete it.
+- **Balances & settle up:** `GET /groups/:id/balances` (computed fresh from expenses and payments, PRD §9, never stored), `POST /groups/:id/settlements`, `DELETE /groups/:id/settlements/:id` (Undo; only the two people involved).
+- **Dashboard:** `GET /groups/:id/summary?month=`: total, my share, what I paid, budget vs spent, by category, by person, recent.
+- **Monthly report:** `GET /reports/groups?month=`: my share of group spending, shown as its own card on Home. It is **not** added to personal totals or category budgets, so nothing is counted twice.
+- Every group route returns 404 to non-members; row-level security covers the same rules for direct database access.
+
 ## Split & settlement engine
 
-The PRD §9 calculations live in [apps/api/src/balances/settlement.ts](apps/api/src/balances/settlement.ts): equal / "just me" splits, net balances, and greedy debt simplification, all in integer paisa, covered by unit tests (`npm test`) including a 500-group randomised money-correctness check. Real groups that use it arrive in roadmap Steps 15–17; there is no demo group or sample data.
+The PRD §9 calculations live in [apps/api/src/balances/settlement.ts](apps/api/src/balances/settlement.ts) and [split.ts](apps/api/src/balances/split.ts): the four split methods, net balances, and greedy debt simplification, all in integer paisa, covered by unit tests (`npm test`) including a 500-group randomised money-correctness check and 2,000 random splits that must add up exactly.

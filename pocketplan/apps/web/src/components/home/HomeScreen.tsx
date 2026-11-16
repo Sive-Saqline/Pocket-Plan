@@ -10,6 +10,7 @@ import { AppShell, Fab } from "@/components/app/AppShell";
 import { BudgetBar, BudgetLabel } from "@/components/budgets/BudgetBar";
 import { ExpenseRow } from "@/components/expenses/ExpenseRow";
 import { ExpenseSheet } from "@/components/expenses/ExpenseSheet";
+import { GroupShareCard } from "./GroupShareCard";
 import { Card, ErrorBanner, SkeletonRows } from "@/components/ui/Card";
 import { Toast, useToast } from "@/components/ui/Toast";
 import { useAuth } from "@/lib/auth";
@@ -213,6 +214,8 @@ export function HomeScreen() {
           </Card>
         </div>
       )}
+
+      <GroupShareCard month={month} />
 
       <Fab label="Add expense" onClick={() => setSheet({ open: true, expense: null })} />
       <ExpenseSheet

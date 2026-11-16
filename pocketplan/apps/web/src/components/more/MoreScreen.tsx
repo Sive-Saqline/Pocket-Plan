@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, Repeat, UserRound, WalletCards, type LucideIcon } from "lucide-react";
+import { ChevronRight, Repeat, UserRound, UsersRound, WalletCards, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { AppShell } from "@/components/app/AppShell";
@@ -14,6 +14,12 @@ export function MoreScreen() {
   return (
     <AppShell title="More">
       <ul className="flex flex-col overflow-hidden rounded-xl bg-surface shadow-card">
+        <MoreLink
+          href="/groups"
+          icon={UsersRound}
+          title="Groups"
+          detail="Share and split expenses, see who owes whom"
+        />
         <MoreLink
           href="/recurring"
           icon={Repeat}

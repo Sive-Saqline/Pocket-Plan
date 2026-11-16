@@ -4,14 +4,21 @@ import { useState, type ReactNode } from "react";
 import { ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { Plus } from "lucide-react";
+import { CategoryIconGrid } from "@/components/ui/CategoryIconGrid";
 import { CategoryIcon, WalletIcon } from "@/components/ui/icons";
 import { walletTypes, type Category, type Wallet, type WalletType } from "@/lib/ledger";
+import { notifyCategoriesChanged } from "@/lib/use-personal-data";
 
 // Shared by Add Expense, Confirm Recurring and the recurring template editor.
 
 export const inputClass =
   "h-12 w-full rounded-lg border border-border bg-surface px-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent aria-[invalid=true]:border-danger";
 
+/**
+ * Category grid plus a "+ New" tile to create a category without leaving the
+ * form. The new category is selected straight away, and every screen showing
+ * categories reloads (notifyCategoriesChanged).
+ */
 export function CategoryPicker({
   categories,
   value,
@@ -26,11 +33,16 @@ export function CategoryPicker({
   /** Rendered under the grid, e.g. a budget note. */
   children?: ReactNode;
 }) {
+  const [created, setCreated] = useState<Category[]>([]);
+  const [adding, setAdding] = useState(false);
+  // until the parent reloads its list, show categories created here too
+  const all = [...categories, ...created.filter((n) => !categories.some((c) => c.id === n.id))];
+
   return (
     <fieldset>
       <legend className="mb-2 text-sm font-medium">Category</legend>
       <div role="radiogroup" aria-label="Category" className="grid grid-cols-3 gap-2">
-        {categories.map((c) => {
+        {all.map((c) => {
           const on = c.id === value;
           return (
             <button
@@ -48,10 +60,103 @@ export function CategoryPicker({
             </button>
           );
         })}
+        {!adding && (
+          <button
+            type="button"
+            onClick={() => setAdding(true)}
+            className="flex min-h-16 flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-border px-1 text-xs font-medium text-accent hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-accent"
+          >
+            <Plus aria-hidden size={22} />
+            New category
+          </button>
+        )}
       </div>
       {error && <p className="mt-1 text-sm text-danger">{error}</p>}
+      {adding && (
+        <NewCategoryForm
+          onCancel={() => setAdding(false)}
+          onCreated={(c) => {
+            setCreated((list) => [...list, c]);
+            setAdding(false);
+            onChange(c.id);
+            notifyCategoriesChanged();
+          }}
+        />
+      )}
       {children}
     </fieldset>
+  );
+}
+
+function NewCategoryForm({ onCancel, onCreated }: { onCancel: () => void; onCreated: (c: Category) => void }) {
+  const { request } = useAuth();
+  const [name, setName] = useState("");
+  const [icon, setIcon] = useState("tag");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  // A nested <form> isn't allowed, so this is a group of controls submitted by its button.
+  async function create() {
+    if (!name.trim()) return setError("Name the category, e.g. Rent");
+    setBusy(true);
+    try {
+      onCreated(await request<Category>("/categories", { method: "POST", body: { name: name.trim(), icon } }));
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Couldn't add the category.");
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div role="group" aria-label="New category" className="mt-3 flex flex-col gap-3 rounded-lg bg-surface-muted p-3">
+      <div>
+        <label htmlFor="new-category-name" className="mb-1.5 block text-sm font-medium">
+          New category
+        </label>
+        <input
+          id="new-category-name"
+          value={name}
+          onChange={(e) => {
+            setName(e.target.value);
+            setError(null);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              void create();
+            }
+          }}
+          placeholder="e.g. Rent, Kids, Fuel"
+          maxLength={30}
+          autoFocus
+          aria-invalid={!!error}
+          aria-describedby={error ? "new-category-error" : undefined}
+          className={inputClass}
+        />
+        {error && (
+          <p id="new-category-error" className="mt-1 text-sm text-danger">
+            {error}
+          </p>
+        )}
+      </div>
+      <div>
+        <p className="mb-1.5 text-sm font-medium">Icon</p>
+        <CategoryIconGrid value={icon} onChange={setIcon} compact />
+      </div>
+      <div className="flex justify-end gap-2">
+        <button type="button" onClick={onCancel} className="h-10 rounded-lg px-3 text-sm font-medium text-text-muted hover:bg-surface">
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={create}
+          disabled={busy}
+          className="h-10 rounded-lg bg-accent px-4 text-sm font-semibold text-text-inverse disabled:opacity-70"
+        >
+          {busy ? "Adding…" : "Add category"}
+        </button>
+      </div>
+    </div>
   );
 }
 

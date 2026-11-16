@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import type { NextRequest } from "next/server";
-import { fail, isSameOrigin, json, RECOVERY_COOKIE, sessionIdOf } from "@/lib/server/http";
+import { fail, INVITE_COOKIE, isSameOrigin, json, RECOVERY_COOKIE, sessionIdOf } from "@/lib/server/http";
 import { friendlyAuthError, supabaseServer } from "@/lib/server/supabase";
 
 /**
@@ -12,6 +12,8 @@ import { friendlyAuthError, supabaseServer } from "@/lib/server/supabase";
  *   POST /api/auth/forgot-password  { email }
  *   POST /api/auth/reset-password   { password }            (after a reset link)
  *   POST /api/auth/change-password  { currentPassword, newPassword }
+ *   POST /api/auth/invite-session   { accessToken, refreshToken }  (from a group-invite email)
+ *   POST /api/auth/finish-invite    { password }                   (first password after that)
  */
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -67,6 +69,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ act
     case "logout": {
       await supabase.auth.signOut();
       (await cookies()).delete(RECOVERY_COOKIE);
+      (await cookies()).delete(INVITE_COOKIE);
       return json({ ok: true });
     }
 
@@ -127,6 +130,48 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ act
         return fail(e.message, e.status);
       }
       await supabase.auth.signOut({ scope: "others" });
+      return json({ ok: true });
+    }
+
+    case "invite-session": {
+      // Supabase's invite email signs the person in with tokens in the URL
+      // fragment (the server never sees it), so the page posts them here and
+      // they move into HttpOnly cookies like any other session.
+      const accessToken = str(body.accessToken);
+      const refreshToken = str(body.refreshToken);
+      if (!accessToken || !refreshToken) return fail("This invite link is incomplete. Ask for a new one.", 400);
+      const { data, error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+      if (error || !data.session || !data.user?.invited_at) {
+        return fail("This invite link has expired or was already used. Ask for a new one.", 401);
+      }
+      (await cookies()).set(INVITE_COOKIE, sessionIdOf(data.session.access_token) ?? "", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 15 * 60,
+      });
+      return json({ ok: true });
+    }
+
+    case "finish-invite": {
+      const password = str(body.password);
+      const weak = passwordProblem(password);
+      if (weak) return fail(weak, 400);
+      const store = await cookies();
+      const { data } = await supabase.auth.getSession();
+      const session = data.session;
+      // Only the session that came from the invite email may set a password
+      // without knowing a current one.
+      if (!session || store.get(INVITE_COOKIE)?.value !== sessionIdOf(session.access_token)) {
+        return fail("This setup link has expired. Sign in, or use Forgot password.", 403);
+      }
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) {
+        const e = friendlyAuthError(error);
+        return fail(e.message, e.status);
+      }
+      store.delete(INVITE_COOKIE);
       return json({ ok: true });
     }
 

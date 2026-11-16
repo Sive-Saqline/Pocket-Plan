@@ -11,7 +11,7 @@ import { Toast, useToast } from "@/components/ui/Toast";
 import { walletTypes, type Category, type Wallet } from "@/lib/ledger";
 import { formatTaka } from "@/lib/money";
 import { usePersonalData } from "@/lib/use-personal-data";
-import { CategorySheet } from "./CategorySheet";
+import { CategorySheet, usageText } from "./CategorySheet";
 import { WalletSheet } from "./WalletSheet";
 
 const typeLabel = (type: Wallet["type"]) => walletTypes.find((t) => t.value === type)?.label ?? "Wallet";
@@ -114,7 +114,14 @@ export function WalletsScreen() {
                     className="flex min-h-14 w-full items-center gap-3 rounded-lg px-1 py-2 text-left hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-accent"
                   >
                     <CategoryBadge icon={c.icon} />
-                    <span className="min-w-0 flex-1 truncate font-medium">{c.name}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-medium">{c.name}</span>
+                      <span className="block truncate text-sm text-text-muted">
+                        {(c.expenseCount ?? 0) + (c.recurringCount ?? 0) > 0
+                          ? `Used in ${usageText(c.expenseCount ?? 0, c.recurringCount ?? 0)}`
+                          : "Not used yet"}
+                      </span>
+                    </span>
                     <ChevronRight aria-hidden size={18} className="shrink-0 text-text-muted" />
                   </button>
                 </li>
@@ -133,6 +140,7 @@ export function WalletsScreen() {
       <CategorySheet
         open={categorySheet.open}
         category={categorySheet.category}
+        categories={personal.categories}
         onClose={() => setCategorySheet({ open: false, category: null })}
         onSaved={saved}
       />

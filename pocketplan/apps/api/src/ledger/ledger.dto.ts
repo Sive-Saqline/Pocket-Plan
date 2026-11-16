@@ -146,6 +146,12 @@ export class CreateCategoryDto {
   icon: CategoryIcon;
 }
 
+export class DeleteCategoryQuery {
+  @IsOptional()
+  @IsUUID('4', { message: 'Pick a category to move them to' })
+  moveTo?: string;
+}
+
 export class UpdateCategoryDto {
   @IsOptional()
   @Transform(trim)

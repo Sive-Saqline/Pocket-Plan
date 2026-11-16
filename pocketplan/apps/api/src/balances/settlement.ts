@@ -8,7 +8,13 @@ export type Paisa = number;
 export interface LedgerExpense {
   amount: Paisa;
   paidBy: string;
-  participants: string[];
+  /** Split equally between these people (when `shares` isn't given). */
+  participants?: string[];
+  /**
+   * Each person's exact share, as stored with a saved group expense (any of
+   * the four split methods). Must add up to `amount`.
+   */
+  shares?: { userId: string; amount: Paisa }[];
 }
 
 export interface LedgerSettlement {
@@ -76,7 +82,9 @@ export function computeBalances(
   };
 
   for (const expense of expenses) {
-    const shares = splitEqually(expense.amount, expense.participants);
+    const shares = expense.shares
+      ? exactShares(expense.amount, expense.shares)
+      : splitEqually(expense.amount, expense.participants ?? []);
     adjust(expense.paidBy, expense.amount);
     for (const [id, share] of shares) adjust(id, -share);
   }
@@ -126,6 +134,30 @@ export function simplifyDebts(balances: Map<string, Paisa>): Payment[] {
     debtor = largest(-1);
   }
   return payments;
+}
+
+function exactShares(
+  amount: Paisa,
+  shares: { userId: string; amount: Paisa }[],
+): Map<string, Paisa> {
+  assertPositiveAmount(amount);
+  if (shares.length === 0) {
+    throw new LedgerError('An expense needs at least one participant');
+  }
+  const map = new Map<string, Paisa>();
+  for (const s of shares) {
+    if (!Number.isInteger(s.amount) || s.amount < 0) {
+      throw new LedgerError('Shares must be whole paisa, not negative');
+    }
+    if (map.has(s.userId)) {
+      throw new LedgerError('Participants must not repeat');
+    }
+    map.set(s.userId, s.amount);
+  }
+  if (shares.reduce((t, s) => t + s.amount, 0) !== amount) {
+    throw new LedgerError('Shares must add up to the expense amount');
+  }
+  return map;
 }
 
 function assertPositiveAmount(amount: Paisa) {

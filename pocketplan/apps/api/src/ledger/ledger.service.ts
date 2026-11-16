@@ -37,8 +37,16 @@ function previousMonth(month: string) {
 export class LedgerService {
   constructor(private readonly store: LedgerStore) {}
 
+  /** The user's categories, each with how often it's used (to spot ones worth removing). */
   async categories(userId: string) {
-    return (await this.store.read(userId)).categories;
+    const { categories, expenses, recurring } = await this.store.read(userId);
+    const count = (items: { categoryId: string }[], id: string) =>
+      items.reduce((n, x) => n + (x.categoryId === id ? 1 : 0), 0);
+    return categories.map((c) => ({
+      ...c,
+      expenseCount: count(expenses, c.id),
+      recurringCount: count(recurring, c.id),
+    }));
   }
 
   async wallets(userId: string) {
@@ -118,18 +126,50 @@ export class LedgerService {
   }
 
   /**
-   * Refused while expenses or recurring expenses use it. Its budgets go with
-   * it: a budget for a category that no longer exists means nothing.
+   * Deletes one of this user's categories (never anyone else's).
+   * - Unused: just deleted.
+   * - In use: `moveTo` names another of the user's categories; its expenses
+   *   and recurring expenses move there first, in the same transaction, so
+   *   nothing is lost. Without `moveTo` it's refused and says how many use it.
+   * Its budgets go with it: a budget for a category that no longer exists
+   * means nothing.
    */
-  deleteCategory(userId: string, id: string) {
+  deleteCategory(userId: string, id: string, moveTo?: string) {
     return this.store.mutate(userId, (ledger) => {
       const category = ledger.categories.find((c) => c.id === id);
       if (!category) throw new NotFoundException('Category not found');
-      assertUnused(ledger, category.name, (x) => x.categoryId === id);
       if (ledger.categories.length === 1) {
         throw new ConflictException(
           'You need at least one category. Add another before deleting this one.',
         );
+      }
+      const uses = (x: { categoryId: string }) => x.categoryId === id;
+      const inUse = ledger.expenses.some(uses) || ledger.recurring.some(uses);
+      if (inUse) {
+        if (!moveTo) {
+          assertUnused(
+            ledger,
+            category.name,
+            uses,
+            (it) => `Choose a category to move ${it} to.`,
+          );
+        } else {
+          if (moveTo === id) {
+            throw new BadRequestException(
+              'Pick a different category to move them to',
+            );
+          }
+          if (!ledger.categories.some((c) => c.id === moveTo)) {
+            throw new BadRequestException('Unknown category to move them to');
+          }
+          const now = new Date().toISOString();
+          for (const item of [...ledger.expenses, ...ledger.recurring]) {
+            if (item.categoryId === id) {
+              item.categoryId = moveTo;
+              item.updatedAt = now;
+            }
+          }
+        }
       }
       ledger.categories = ledger.categories.filter((c) => c.id !== id);
       ledger.budgets = ledger.budgets.filter((b) => b.categoryId !== id);
@@ -354,6 +394,8 @@ function assertUnused(
   ledger: UserLedger,
   name: string,
   uses: (x: { accountId: string; categoryId: string }) => boolean,
+  /** What to do about it; `it` is "it" or "them". */
+  advice = (it: string) => `Move or delete ${it} first.`,
 ) {
   const expenses = ledger.expenses.filter(uses).length;
   const recurring = ledger.recurring.filter(uses).length;
@@ -363,9 +405,9 @@ function assertUnused(
     recurring && plural(recurring, 'recurring expense'),
   ].filter(Boolean);
   throw new ConflictException(
-    `${name} is used by ${parts.join(' and ')}. Move or delete ${
-      expenses + recurring === 1 ? 'it' : 'them'
-    } first.`,
+    `${name} is used by ${parts.join(' and ')}. ${advice(
+      expenses + recurring === 1 ? 'it' : 'them',
+    )}`,
   );
 }
 

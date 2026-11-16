@@ -1,6 +1,6 @@
 "use client";
 
-import { Ellipsis, House, PieChart, Plus, ReceiptText, Repeat, UserRound, WalletCards } from "lucide-react";
+import { Ellipsis, House, PieChart, Plus, ReceiptText, Repeat, UserRound, UsersRound, WalletCards } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -13,12 +13,12 @@ const mainPages = [
   { href: "/", label: "Home", icon: House },
   { href: "/expenses", label: "Expenses", icon: ReceiptText },
   { href: "/budgets", label: "Budgets", icon: PieChart },
-  // Groups returns here with real, saved groups in roadmap Step 15.
 ];
 
 /** Desktop sidebar: every page listed directly, no "More" in between. */
 const sidebarPages = [
   ...mainPages,
+  { href: "/groups", label: "Groups", icon: UsersRound },
   { href: "/recurring", label: "Recurring expenses", icon: Repeat },
   { href: "/wallets", label: "Wallets & categories", icon: WalletCards },
   { href: "/profile", label: "Profile & settings", icon: UserRound },
@@ -28,7 +28,7 @@ const sidebarPages = [
 const tabs = [...mainPages, { href: "/more", label: "More", icon: Ellipsis }];
 
 // Pages reached from More keep the More tab highlighted.
-const moreRoutes = ["/more", "/recurring", "/wallets", "/profile"];
+const moreRoutes = ["/more", "/groups", "/invite", "/recurring", "/wallets", "/profile"];
 
 function isActive(href: string, pathname: string) {
   if (href === "/more") return moreRoutes.some((r) => pathname.startsWith(r));

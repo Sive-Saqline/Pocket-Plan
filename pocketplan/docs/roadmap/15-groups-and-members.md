@@ -1,6 +1,8 @@
 # Step 15: Groups & members
 
-**Status:** ⏳ Not started · **PRD:** 6.10, 6.11, 12 · **Depends on:** Step 14
+**Status:** 🟡 Built, waiting for your test (2026-11-16) · **PRD:** 6.10, 6.11, 12 · **Depends on:** Step 14
+
+> Built together with Steps 16-17 on 2026-11-16, including email and link invites (moved into scope).
 
 ## Goal
 Real groups saved in the database and linked to real user accounts. (The old browser-only demo group was removed on 2026-11-13.)

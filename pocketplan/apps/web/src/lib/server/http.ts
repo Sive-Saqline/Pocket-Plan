@@ -32,3 +32,6 @@ export function sessionIdOf(accessToken: string): string | null {
 }
 
 export const RECOVERY_COOKIE = "pp_recovery";
+
+/** Lets a person who arrived from a group-invite email set their first password (15 minutes). */
+export const INVITE_COOKIE = "pp_invite";
