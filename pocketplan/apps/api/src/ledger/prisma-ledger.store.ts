@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { LedgerStore } from './ledger.store';
+import type { ReportSource } from './reports';
 import type {
   Budget,
   Category,
@@ -150,6 +151,62 @@ export class PrismaLedgerStore extends LedgerStore {
       await this.save(tx, userId, before, draft);
       return result;
     }, TX_OPTIONS);
+  }
+
+  /**
+   * Report totals in ONE query: the database sums the expenses (GROUP BY
+   * month × category × wallet) instead of sending every row. Amounts come
+   * back in whole paisa so they add up exactly.
+   */
+  async report(userId: string, from: string, to: string) {
+    const monthNo = (m: string) => Number(m.replace('-', '')); // 2026-11 → 202611
+    const start = toDate(`${from}-01`);
+    const [ty, tm] = to.split('-').map(Number);
+    const end = new Date(Date.UTC(ty, tm, 1)); // first day after the range
+    const rows = await this.prisma.$queryRaw<ReportSource[]>`
+      SELECT
+        (SELECT coalesce(json_agg(json_build_object(
+            'id', c.id, 'name', c.name, 'icon', c.icon, 'systemKey', c.system_key,
+            'createdAt', ${TS('c.created_at')}
+          ) ORDER BY c.created_at, c.id), '[]'::json)
+          FROM categories c WHERE c.user_id = u.id) AS categories,
+        (SELECT coalesce(json_agg(json_build_object(
+            'id', a.id, 'name', a.name, 'type', a.type, 'balance', a.balance::float8,
+            'createdAt', ${TS('a.created_at')}, 'updatedAt', ${TS('a.updated_at')}
+          ) ORDER BY a.created_at, a.id), '[]'::json)
+          FROM accounts a WHERE a.user_id = u.id) AS accounts,
+        (SELECT coalesce(json_agg(json_build_object(
+            'categoryId', b.category_id,
+            'month', b.year::text || '-' || lpad(b.month::text, 2, '0'),
+            'planned', (b.planned_amount * 100)::float8
+          )), '[]'::json)
+          FROM budgets b
+          WHERE b.user_id = u.id
+            AND b.year * 100 + b.month BETWEEN ${monthNo(from)} AND ${monthNo(to)}) AS budgets,
+        (SELECT coalesce(json_agg(json_build_object(
+            'month', g.year::text || '-' || lpad(g.month::text, 2, '0'),
+            'target', (g.target_amount * 100)::float8
+          )), '[]'::json)
+          FROM savings_goals g
+          WHERE g.user_id = u.id
+            AND g.year * 100 + g.month BETWEEN ${monthNo(from)} AND ${monthNo(to)}) AS savings,
+        (SELECT coalesce(json_agg(t), '[]'::json) FROM (
+            SELECT to_char(e.expense_date, 'YYYY-MM') AS "month",
+                   e.category_id AS "categoryId",
+                   e.account_id AS "accountId",
+                   (sum(e.amount) * 100)::float8 AS "paisa",
+                   count(*)::int AS "count"
+            FROM expenses e
+            WHERE e.user_id = u.id AND e.group_id IS NULL
+              AND e.expense_date >= ${start} AND e.expense_date < ${end}
+            GROUP BY 1, 2, 3
+          ) t) AS totals
+      FROM users u
+      WHERE u.id = ${userId}::uuid`;
+    if (rows.length === 0) {
+      throw new NotFoundException('Your profile is missing');
+    }
+    return rows[0];
   }
 
   /**

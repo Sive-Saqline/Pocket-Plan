@@ -16,5 +16,6 @@ import { RecurringService } from './recurring.service';
     // Supabase Postgres. Tests swap in FileLedgerStore (no database needed).
     { provide: LedgerStore, useClass: PrismaLedgerStore },
   ],
+  exports: [LedgerService],
 })
 export class LedgerModule {}

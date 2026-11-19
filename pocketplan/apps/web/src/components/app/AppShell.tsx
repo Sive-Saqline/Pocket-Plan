@@ -1,6 +1,6 @@
 "use client";
 
-import { Ellipsis, House, PieChart, Plus, ReceiptText, Repeat, UserRound, UsersRound, WalletCards } from "lucide-react";
+import { ChartColumnBig, Ellipsis, House, PieChart, Plus, ReceiptText, Repeat, UserRound, UsersRound, WalletCards } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -13,6 +13,7 @@ const mainPages = [
   { href: "/", label: "Home", icon: House },
   { href: "/expenses", label: "Expenses", icon: ReceiptText },
   { href: "/budgets", label: "Budgets", icon: PieChart },
+  { href: "/reports", label: "Reports", icon: ChartColumnBig },
 ];
 
 /** Desktop sidebar: every page listed directly, no "More" in between. */
@@ -24,7 +25,7 @@ const sidebarPages = [
   { href: "/profile", label: "Profile & settings", icon: UserRound },
 ];
 
-/** Phone bottom bar: only four fit, so the rest sit behind "More". */
+/** Phone bottom bar: five tabs (EXPERIENCE.md §2.1); the rest sit behind "More". */
 const tabs = [...mainPages, { href: "/more", label: "More", icon: Ellipsis }];
 
 // Pages reached from More keep the More tab highlighted.
@@ -129,7 +130,7 @@ export function AppShell({
         aria-label="Main"
         className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
       >
-        <ul className="mx-auto grid h-16 max-w-2xl grid-cols-4">
+        <ul className="mx-auto grid h-16 max-w-2xl grid-cols-5">
           {tabs.map((t) => {
             const active = isActive(t.href, pathname);
             const badge = t.href === "/more" && dueCount > 0;

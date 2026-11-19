@@ -5,6 +5,7 @@ import { GroupsModule } from './groups/groups.module';
 import { LedgerModule } from './ledger/ledger.module';
 import { HealthController } from './health/health.controller';
 import { PrismaModule } from './prisma/prisma.module';
+import { ReportsModule } from './reports/reports.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { PrismaModule } from './prisma/prisma.module';
     AuthModule,
     LedgerModule,
     GroupsModule,
+    ReportsModule,
   ],
   controllers: [HealthController],
 })

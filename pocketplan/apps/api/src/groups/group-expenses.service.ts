@@ -8,6 +8,8 @@ import {
 import { Prisma } from '@prisma/client';
 import { LedgerError, Paisa, toPaisa } from '../balances/settlement';
 import { computeSplit } from '../balances/split';
+import { budgetStatus } from '../ledger/budgets';
+import { assertReportRange, monthsBetween } from '../ledger/reports';
 import { PrismaService } from '../prisma/prisma.service';
 import { GroupExpenseDto, SettlementDto } from './groups.dto';
 import {
@@ -297,6 +299,102 @@ export class GroupExpensesService {
         }))
         .filter((m) => m.active || m.paid > 0 || m.share > 0),
       recent: inMonth.slice(0, 5).map((e) => expenseView(e, userId, me.role)),
+    };
+  }
+
+  /**
+   * Reports (PRD §6.9) scoped to one group, `from`–`to` inclusive (YYYY-MM).
+   * Totals are summed in the database. The group budget is one monthly
+   * amount, so the plan for the range is that amount × the number of months.
+   */
+  async report(userId: string, groupId: string, from: string, to: string) {
+    assertReportRange(from, to);
+    const months = monthsBetween(from, to);
+    const start = monthRange(from).from;
+    const end = monthRange(to).to;
+    const [members, group, totals, people] = await Promise.all([
+      loadMembers(this.prisma, groupId),
+      this.prisma.group.findUnique({ where: { id: groupId } }),
+      this.prisma.$queryRaw<
+        { month: string; category: string; paisa: number; count: number }[]
+      >`
+        SELECT to_char(e.expense_date, 'YYYY-MM') AS month,
+               e.group_category AS category,
+               (sum(e.amount) * 100)::float8 AS paisa,
+               count(*)::int AS count
+        FROM expenses e
+        WHERE e.group_id = ${groupId}::uuid
+          AND e.expense_date >= ${start} AND e.expense_date < ${end}
+        GROUP BY 1, 2`,
+      this.prisma.$queryRaw<{ user_id: string; paid: number; share: number }[]>`
+        SELECT m.user_id,
+          coalesce((SELECT sum(e.amount) * 100 FROM expenses e
+                    WHERE e.group_id = m.group_id AND e.paid_by = m.user_id
+                      AND e.expense_date >= ${start} AND e.expense_date < ${end}), 0)::float8 AS paid,
+          coalesce((SELECT sum(p.share_amount) * 100 FROM expense_participants p
+                    JOIN expenses e ON e.id = p.expense_id
+                    WHERE e.group_id = m.group_id AND p.user_id = m.user_id
+                      AND e.expense_date >= ${start} AND e.expense_date < ${end}), 0)::float8 AS share
+        FROM group_members m
+        WHERE m.group_id = ${groupId}::uuid`,
+    ]);
+    requireMember(members, userId);
+    if (!group) throw new NotFoundException('Group not found');
+
+    const total = sum(totals.map((r) => r.paisa));
+    const byCategory = new Map<string, Paisa>();
+    const byMonth = new Map<string, { paisa: Paisa; count: number }>();
+    for (const r of totals) {
+      byCategory.set(r.category, (byCategory.get(r.category) ?? 0) + r.paisa);
+      const m = byMonth.get(r.month) ?? { paisa: 0, count: 0 };
+      byMonth.set(r.month, {
+        paisa: m.paisa + r.paisa,
+        count: m.count + r.count,
+      });
+    }
+    const sums = new Map(people.map((p) => [p.user_id, p]));
+    const planned = group.monthlyBudget
+      ? paisa(group.monthlyBudget) * months.length
+      : null;
+
+    return {
+      scope: 'group' as const,
+      group: { id: group.id, name: group.name },
+      from,
+      to,
+      months,
+      total: taka(total),
+      count: totals.reduce((t, r) => t + r.count, 0),
+      myShare: taka(sums.get(userId)?.share ?? 0),
+      byCategory: [...byCategory]
+        .map(([category, value]) => ({
+          id: category,
+          icon: category,
+          total: taka(value),
+          share: total ? Math.round((value / total) * 1000) / 10 : 0,
+        }))
+        .sort((a, b) => b.total - a.total),
+      byMember: members
+        .map((m) => ({
+          userId: m.userId,
+          name: m.name,
+          active: m.active,
+          paid: taka(sums.get(m.userId)?.paid ?? 0),
+          share: taka(sums.get(m.userId)?.share ?? 0),
+        }))
+        .filter((m) => m.active || m.paid > 0 || m.share > 0)
+        .sort((a, b) => b.share - a.share),
+      trend: months.map((month) => ({
+        month,
+        total: taka(byMonth.get(month)?.paisa ?? 0),
+        count: byMonth.get(month)?.count ?? 0,
+      })),
+      budget: {
+        planned: planned === null ? null : taka(planned),
+        spent: taka(total),
+        percent: planned ? Math.floor((total * 100) / planned) : null,
+        status: planned === null ? 'none' : budgetStatus(total, planned),
+      },
     };
   }
 

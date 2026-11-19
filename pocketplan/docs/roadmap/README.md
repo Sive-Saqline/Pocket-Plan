@@ -45,7 +45,7 @@ Last re-planned: 2026-11-13. Supabase moved forward to Step 11, so every later f
 | **11** | [**Supabase integration**: database, sign-in, photo storage](11-supabase-integration.md) | 5, 6.1, 8, 12 | 🟡 In progress (tables + RLS done) |
 | 12 | [Wallets & categories: complete](12-wallets-complete.md) | 6.3, 6.4 | 🟡 Built, waiting for your test |
 | 13 | [Savings goals](13-savings-goals.md) | 6.8 | 🟡 Built, waiting for your test |
-| 14 | [Reports](14-reports.md) | 6.9 | ⏳ |
+| 14 | [Reports](14-reports.md) | 6.9 | 🟡 Built, waiting for your test |
 | 15 | [Groups & members](15-groups-and-members.md) | 6.10, 6.11 | 🟡 Built, waiting for your test |
 | 16 | [Group expenses & splitting](16-group-expenses-and-splitting.md) | 6.12 | 🟡 Built, waiting for your test |
 | 17 | [Balances, settlements & group budgets](17-balances-settlements-group-budgets.md) | 6.13, 9 | 🟡 Built, waiting for your test |

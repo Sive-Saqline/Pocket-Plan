@@ -5,6 +5,7 @@ import { join, resolve } from 'node:path';
 import { newLedger } from './defaults';
 import { LedgerStore } from './ledger.store';
 import { UserLedger } from './ledger.types';
+import { reportSourceFromLedger } from './reports';
 
 const USER_ID = /^[0-9a-f-]{36}$/i;
 
@@ -22,6 +23,10 @@ export class FileLedgerStore extends LedgerStore {
 
   read(userId: string) {
     return this.enqueue(userId, () => this.load(userId));
+  }
+
+  async report(userId: string, from: string, to: string) {
+    return reportSourceFromLedger(await this.read(userId), from, to);
   }
 
   mutate<T>(userId: string, change: (ledger: UserLedger) => T) {

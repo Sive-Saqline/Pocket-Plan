@@ -7,6 +7,7 @@ import {
 import { randomUUID } from 'node:crypto';
 import { budgetView } from './budgets';
 import { savingsView } from './savings';
+import { assertReportRange, personalReport } from './reports';
 import {
   CopyBudgetsDto,
   CreateCategoryDto,
@@ -333,6 +334,12 @@ export class LedgerService {
         throw new NotFoundException('No savings target for that month');
       }
     });
+  }
+
+  /** Reports (PRD §6.9) on personal spending, `from`–`to` inclusive (YYYY-MM). */
+  async report(userId: string, from: string, to: string) {
+    assertReportRange(from, to);
+    return personalReport(await this.store.report(userId, from, to), from, to);
   }
 
   /** Dashboard numbers for one month (YYYY-MM). */

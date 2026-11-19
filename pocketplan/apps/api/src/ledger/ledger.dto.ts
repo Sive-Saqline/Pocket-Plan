@@ -95,6 +95,20 @@ export class MonthQuery {
   month: string;
 }
 
+/** GET /reports?from=YYYY-MM&to=YYYY-MM[&group_id=<uuid>] */
+export class ReportQuery {
+  @Matches(MONTH, { message: 'from must be YYYY-MM' })
+  from: string;
+
+  @Matches(MONTH, { message: 'to must be YYYY-MM' })
+  to: string;
+
+  /** Report on one group I belong to instead of my personal spending. */
+  @IsOptional()
+  @IsUUID('4', { message: 'group_id must be a group id' })
+  group_id?: string;
+}
+
 // A wallet's balance is typed in by the user and is informational only
 // (PRD Decision 6). It may be negative, e.g. a credit card.
 const BALANCE_LIMIT = 1_000_000_000;

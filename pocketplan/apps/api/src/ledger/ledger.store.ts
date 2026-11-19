@@ -1,4 +1,5 @@
 import { UserLedger } from './ledger.types';
+import type { ReportSource } from './reports';
 
 /**
  * Storage seam for a user's personal finance data. The file-backed
@@ -17,4 +18,14 @@ export abstract class LedgerStore {
     userId: string,
     change: (ledger: UserLedger) => T,
   ): Promise<T>;
+
+  /**
+   * Personal spending from `from` to `to` (YYYY-MM, inclusive), totalled per
+   * month × category × wallet, with the budgets and savings targets in range.
+   */
+  abstract report(
+    userId: string,
+    from: string,
+    to: string,
+  ): Promise<ReportSource>;
 }
