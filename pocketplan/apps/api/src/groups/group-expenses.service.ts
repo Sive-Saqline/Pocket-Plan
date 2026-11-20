@@ -9,7 +9,17 @@ import { Prisma } from '@prisma/client';
 import { LedgerError, Paisa, toPaisa } from '../balances/settlement';
 import { computeSplit } from '../balances/split';
 import { budgetStatus } from '../ledger/budgets';
-import { assertReportRange, monthsBetween } from '../ledger/reports';
+import { CATEGORY_ICONS } from '../ledger/ledger.types';
+import {
+  addDays,
+  assertDateRange,
+  changePercent,
+  fullMonthsOf,
+  previousOf,
+  rangeFields,
+  trendOf,
+  type ReportRange,
+} from '../ledger/reports';
 import { PrismaService } from '../prisma/prisma.service';
 import { GroupExpenseDto, SettlementDto } from './groups.dto';
 import {
@@ -303,69 +313,102 @@ export class GroupExpensesService {
   }
 
   /**
-   * Reports (PRD §6.9) scoped to one group, `from`–`to` inclusive (YYYY-MM).
+   * Reports (PRD §6.9) scoped to one group, over a date range (inclusive).
    * Totals are summed in the database. The group budget is one monthly
-   * amount, so the plan for the range is that amount × the number of months.
+   * amount, so the plan is that amount × the months the range covers
+   * completely, compared with the spending in those months.
    */
-  async report(userId: string, groupId: string, from: string, to: string) {
-    assertReportRange(from, to);
-    const months = monthsBetween(from, to);
-    const start = monthRange(from).from;
-    const end = monthRange(to).to;
-    const [members, group, totals, people] = await Promise.all([
+  async report(
+    userId: string,
+    groupId: string,
+    range: ReportRange,
+    filterCategories: string[] = [],
+  ) {
+    assertDateRange(range);
+    const prev = previousOf(range);
+    const trend = trendOf(range);
+    const fullMonths = fullMonthsOf(range);
+    const day = (d: string) => new Date(`${d}T00:00:00.000Z`);
+    const start = day(range.start);
+    const end = day(addDays(range.end, 1)); // the day after the range
+    // Only known category keys are applied; [] means all.
+    const categories = filterCategories.filter((c) =>
+      (CATEGORY_ICONS as readonly string[]).includes(c),
+    );
+    const [members, group, allTotals, people] = await Promise.all([
       loadMembers(this.prisma, groupId),
       this.prisma.group.findUnique({ where: { id: groupId } }),
       this.prisma.$queryRaw<
-        { month: string; category: string; paisa: number; count: number }[]
+        { date: string; category: string; paisa: number; count: number }[]
       >`
-        SELECT to_char(e.expense_date, 'YYYY-MM') AS month,
+        SELECT to_char(e.expense_date, 'YYYY-MM-DD') AS date,
                e.group_category AS category,
                (sum(e.amount) * 100)::float8 AS paisa,
                count(*)::int AS count
         FROM expenses e
         WHERE e.group_id = ${groupId}::uuid
-          AND e.expense_date >= ${start} AND e.expense_date < ${end}
+          AND e.expense_date >= ${day(prev.start)}
+          AND e.expense_date < ${end}
+          AND (cardinality(${categories}::text[]) = 0
+               OR e.group_category = ANY(${categories}::text[]))
         GROUP BY 1, 2`,
       this.prisma.$queryRaw<{ user_id: string; paid: number; share: number }[]>`
         SELECT m.user_id,
           coalesce((SELECT sum(e.amount) * 100 FROM expenses e
                     WHERE e.group_id = m.group_id AND e.paid_by = m.user_id
-                      AND e.expense_date >= ${start} AND e.expense_date < ${end}), 0)::float8 AS paid,
+                      AND e.expense_date >= ${start} AND e.expense_date < ${end}
+                      AND (cardinality(${categories}::text[]) = 0
+                           OR e.group_category = ANY(${categories}::text[]))), 0)::float8 AS paid,
           coalesce((SELECT sum(p.share_amount) * 100 FROM expense_participants p
                     JOIN expenses e ON e.id = p.expense_id
                     WHERE e.group_id = m.group_id AND p.user_id = m.user_id
-                      AND e.expense_date >= ${start} AND e.expense_date < ${end}), 0)::float8 AS share
+                      AND e.expense_date >= ${start} AND e.expense_date < ${end}
+                      AND (cardinality(${categories}::text[]) = 0
+                           OR e.group_category = ANY(${categories}::text[]))), 0)::float8 AS share
         FROM group_members m
         WHERE m.group_id = ${groupId}::uuid`,
     ]);
     requireMember(members, userId);
     if (!group) throw new NotFoundException('Group not found');
 
+    const totals = allTotals.filter((r) => r.date >= range.start);
     const total = sum(totals.map((r) => r.paisa));
+    const previousTotal = sum(
+      allTotals.filter((r) => r.date <= prev.end).map((r) => r.paisa),
+    );
     const byCategory = new Map<string, Paisa>();
-    const byMonth = new Map<string, { paisa: Paisa; count: number }>();
+    const byKey = new Map<string, { paisa: Paisa; count: number }>();
     for (const r of totals) {
       byCategory.set(r.category, (byCategory.get(r.category) ?? 0) + r.paisa);
-      const m = byMonth.get(r.month) ?? { paisa: 0, count: 0 };
-      byMonth.set(r.month, {
-        paisa: m.paisa + r.paisa,
-        count: m.count + r.count,
-      });
+      const k = trend.keyOf(r.date);
+      const m = byKey.get(k) ?? { paisa: 0, count: 0 };
+      byKey.set(k, { paisa: m.paisa + r.paisa, count: m.count + r.count });
     }
     const sums = new Map(people.map((p) => [p.user_id, p]));
-    const planned = group.monthlyBudget
-      ? paisa(group.monthlyBudget) * months.length
-      : null;
+    const planned =
+      group.monthlyBudget && fullMonths.length
+        ? paisa(group.monthlyBudget) * fullMonths.length
+        : null;
+    const spentInFullMonths = sum(
+      totals
+        .filter((r) => fullMonths.includes(r.date.slice(0, 7)))
+        .map((r) => r.paisa),
+    );
 
     return {
       scope: 'group' as const,
       group: { id: group.id, name: group.name },
-      from,
-      to,
-      months,
+      ...rangeFields(range),
+      fullMonths,
       total: taka(total),
       count: totals.reduce((t, r) => t + r.count, 0),
       myShare: taka(sums.get(userId)?.share ?? 0),
+      filters: { categories, wallets: [] as string[] },
+      previous: {
+        ...prev,
+        total: taka(previousTotal),
+        change: changePercent(total, previousTotal),
+      },
       byCategory: [...byCategory]
         .map(([category, value]) => ({
           id: category,
@@ -384,16 +427,20 @@ export class GroupExpensesService {
         }))
         .filter((m) => m.active || m.paid > 0 || m.share > 0)
         .sort((a, b) => b.share - a.share),
-      trend: months.map((month) => ({
-        month,
-        total: taka(byMonth.get(month)?.paisa ?? 0),
-        count: byMonth.get(month)?.count ?? 0,
+      trendBy: trend.by,
+      trend: trend.keys.map((key) => ({
+        key,
+        total: taka(byKey.get(key)?.paisa ?? 0),
+        count: byKey.get(key)?.count ?? 0,
       })),
       budget: {
         planned: planned === null ? null : taka(planned),
-        spent: taka(total),
-        percent: planned ? Math.floor((total * 100) / planned) : null,
-        status: planned === null ? 'none' : budgetStatus(total, planned),
+        spent: taka(spentInFullMonths),
+        percent: planned
+          ? Math.floor((spentInFullMonths * 100) / planned)
+          : null,
+        status:
+          planned === null ? 'none' : budgetStatus(spentInFullMonths, planned),
       },
     };
   }

@@ -1,21 +1,25 @@
-# Step 20: AI: monthly insights
+# Step 20: AI insights in Reports
 
-**Status:** ⏳ Not started · **PRD:** 6.16, 11 · **Depends on:** Step 19
+**Status:** 🟡 Built, waiting for your test · **PRD:** 6.16, 11 · **Depends on:** Step 14 (Reports), Step 18 (AI module)
+
+> Re-planned and built 2026-11-20. Step 19 is on hold, so this step went first, and it was **merged into Reports** instead of being a separate "Insights" feature (no Home card).
+>
+> - **Manual first.** Reports opens exactly as before. New manual tools: **filters** by category and wallet (tap a row in "By category" or "By wallet" to show only it; chips above the report remove a filter or "Show all"), and a **comparison** with the previous period of the same length ("12% more than Jun – Aug (৳3,000)"). Filters live in the URL (`cat`, `wallet`), and any range of 1 to 12 months is accepted.
+> - **Ask AI** (header pill, same box as Step 18, typed or spoken): a question like "অক্টোবরে বিকাশে কত খরচ?" or "Flatmates, last 6 months" sets the range, personal or group, categories and wallets. The answer appears next to a separate **Undo**, which puts the report back as it was. The report itself is always computed from the database.
+> - **AI insights card** (next to the total): generated only when the user taps "Get insights". It gives a summary, one thing that stands out and a forecast ("if the pattern holds"), with loading, error and "Try again" states. It is cached per view for the visit, to spare the AI quota, and has a "Refresh". After Ask AI, the card also shows the question and its answer.
+> - **Numbers stay real.** The AI is given only computed facts: totals, shares, the change in percent, budgets and savings when nothing is filtered, and a forecast baseline (the average of the last up to 3 complete months). It is told to repeat only those numbers. It writes information, never advice. Answers come in the question's language; insights from the button come in English.
+> - **Budgets and savings while filtered:** with a wallet filter, the budget card is hidden (a plan compared with one wallet's spending would mislead); with any filter, savings is hidden; a group's budget is hidden while its categories are filtered.
+> - **Custom dates (added 2026-11-20 at your request):** a calendar button next to the month opens a panel with From and To dates (the browser's own date picker), quick choices (last 7, 15, 30 or 90 days), and checks (end not after today, start before end, at most a year). While custom dates are on, the month switcher is replaced by "5 – 20 Nov 2026 · Custom · 16 days" with × to go back to months; the four presets stay as they were. Internally every report is now a date range (`GET /reports?start=&end=`, alongside `from`/`to` for months), and the totals are summed per day in the database. Ranges up to 62 days that aren't whole months show a daily trend; others show months. Whole months compare with the same number of months before; custom days with the same number of days before. Budgets and savings targets are monthly, so they count only months the range covers completely; with none, the cards say so. Ask AI understands day ranges too ("last 10 days"). The SQL was compared read-only with the same totals worked out in code, for every user and three kinds of range: all matched (~320 ms each).
+> - **Download (added 2026-11-20 at your request):** a "Download" dropdown in the Reports header offers **PDF** or **CSV** for the report as shown (same range, scope and filters; same cards hidden; AI insights included when generated for that view). Built in the browser, no server call (`lib/report-export.ts`). CSV is UTF-8 with a BOM, so Bangla names open in Excel, and text cells that start with `=`, `+`, `-` or `@` are prefixed with `'`, so no cell runs as a formula. PDF opens the browser's print dialog on a clean A4 layout ("Save as PDF"); the browser is used because PDF libraries' built-in fonts can't show Bangla or ৳.
+> - **API:** `GET /reports` takes `categories=` and `wallets=` (comma-separated; unknown ids are ignored) and returns `filters` and `previous`. `POST /ai/report-ask` (two AI calls: question → filters, then report → words) and `POST /ai/insights` (one call). Both count toward the 20-a-minute limit and change no data.
+> - **Tests:** unit tests for the filters, previous range, AI filter checks, facts and baseline; e2e tests for filtered reports and the comparison, report-ask (the narration gets the database's numbers), insights (nothing changes), bad ranges refused before any AI call, and AI failures. The group category filter SQL was checked read-only against the real database.
 
 ## Goal
-A short summary of the month in plain language, based on the user's real numbers.
-
-## Tasks
-1. `POST /ai/insights` (for the user, or for a group with `group_id`): the API gathers category totals, budgets, the previous month for comparison, and the Step 19 flags, then asks Claude for:
-   - a short summary,
-   - one note on anything unusual,
-   - one forecast for next month.
-2. Use only the user's actual numbers. Write it as information, never financial advice (PRD 11 and §14).
-3. **Web:** an "Insights" card on Home and on Reports, generated **only when the user asks**, with loading, error, and retry states.
-4. Tests with a fake AI: the right numbers are sent, failures are handled, and the user's data isn't changed.
+Plain-language help on top of Reports: ask a question to set up the report, and get a short summary of what's on screen.
 
 ## Done when
-- [ ] Insights can be generated for personal and group views
-- [ ] Clear error and retry when the AI is unavailable
+- [ ] Manual reports work as before, with category and wallet filters and the previous-period comparison *(waiting for your check)*
+- [ ] Ask AI sets the report from a question, for personal and group views; Undo puts it back *(waiting for your check)*
+- [ ] Insights can be generated for personal and group views, with a clear error and retry when the AI is unavailable *(API tests pass; waiting for your check)*
 - [ ] Bugs found during this step fixed and logged in [ongoing-bug-fixing.md](ongoing-bug-fixing.md)
-- [ ] Lint, tests, and build pass
+- [ ] Lint, tests, and build pass *(lint, type check, unit and e2e tests pass; `next build` not run, because it clashes with the running dev server)*

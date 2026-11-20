@@ -1,6 +1,8 @@
 # Step 19: Smart checks: unusual, duplicate & repeating expenses
 
-**Status:** ⏳ Not started · **PRD:** 6.17, 6.18 · **Depends on:** Step 18
+**Status:** ⏸ On hold (decided 2026-11-20; no plans for it yet) · **PRD:** 6.17, 6.18 · **Depends on:** Step 18
+
+> Step 20 went ahead without it. When this step is picked up again, its flags can be added to the facts the AI insights read (`apps/api/src/ai/report-insights.ts`, `factsOf`).
 
 ## Goal
 Point out expenses that look wrong or repeat. These checks are plain statistics: **no AI call** is needed.

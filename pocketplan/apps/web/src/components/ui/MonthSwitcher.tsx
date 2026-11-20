@@ -7,12 +7,15 @@ export function MonthSwitcher({
   onChange,
   caption,
   maxMonth = currentMonth(),
+  labelAction,
 }: {
   month: string;
   onChange: (month: string) => void;
   caption?: ReactNode;
   /** Latest month the user can move to (YYYY-MM). */
   maxMonth?: string;
+  /** A small control shown right after the month name (e.g. a calendar button). */
+  labelAction?: ReactNode;
 }) {
   return (
     <div className="flex items-center justify-between rounded-xl bg-surface p-2 shadow-card">
@@ -24,9 +27,12 @@ export function MonthSwitcher({
       >
         <ChevronLeft aria-hidden size={22} />
       </button>
-      <div className="text-center">
-        <p className="font-semibold">{monthLabel(month)}</p>
-        {caption && <p className="font-mono text-sm text-text-muted tabular-nums">{caption}</p>}
+      <div className="flex items-center gap-1">
+        <div className="text-center">
+          <p className="font-semibold">{monthLabel(month)}</p>
+          {caption && <p className="font-mono text-sm text-text-muted tabular-nums">{caption}</p>}
+        </div>
+        {labelAction}
       </div>
       <button
         type="button"

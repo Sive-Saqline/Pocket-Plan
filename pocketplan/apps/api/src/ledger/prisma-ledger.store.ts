@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { LedgerStore } from './ledger.store';
-import type { ReportSource } from './reports';
+import { addDays, type ReportRange, type ReportSource } from './reports';
 import type {
   Budget,
   Category,
@@ -158,11 +158,12 @@ export class PrismaLedgerStore extends LedgerStore {
    * month × category × wallet) instead of sending every row. Amounts come
    * back in whole paisa so they add up exactly.
    */
-  async report(userId: string, from: string, to: string) {
-    const monthNo = (m: string) => Number(m.replace('-', '')); // 2026-11 → 202611
-    const start = toDate(`${from}-01`);
-    const [ty, tm] = to.split('-').map(Number);
-    const end = new Date(Date.UTC(ty, tm, 1)); // first day after the range
+  async report(userId: string, range: ReportRange) {
+    const monthNo = (m: string) => Number(m.slice(0, 7).replace('-', '')); // 2026-11 → 202611
+    const from = range.start;
+    const to = range.end;
+    const start = toDate(range.start);
+    const end = toDate(addDays(range.end, 1)); // the day after the range
     const rows = await this.prisma.$queryRaw<ReportSource[]>`
       SELECT
         (SELECT coalesce(json_agg(json_build_object(
@@ -191,7 +192,7 @@ export class PrismaLedgerStore extends LedgerStore {
           WHERE g.user_id = u.id
             AND g.year * 100 + g.month BETWEEN ${monthNo(from)} AND ${monthNo(to)}) AS savings,
         (SELECT coalesce(json_agg(t), '[]'::json) FROM (
-            SELECT to_char(e.expense_date, 'YYYY-MM') AS "month",
+            SELECT to_char(e.expense_date, 'YYYY-MM-DD') AS "date",
                    e.category_id AS "categoryId",
                    e.account_id AS "accountId",
                    (sum(e.amount) * 100)::float8 AS "paisa",

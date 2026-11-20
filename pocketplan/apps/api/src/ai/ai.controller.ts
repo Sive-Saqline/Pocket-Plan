@@ -1,6 +1,11 @@
 import { Body, Controller, HttpCode, Post, UseGuards } from '@nestjs/common';
 import { AuthGuard, CurrentUserId } from '../auth/auth.guard';
-import { CategorizeDto, ParseExpenseDto } from './ai.dto';
+import {
+  CategorizeDto,
+  ParseExpenseDto,
+  ReportAskDto,
+  ReportViewDto,
+} from './ai.dto';
 import { AiService } from './ai.service';
 
 /**
@@ -16,6 +21,20 @@ export class AiController {
   @HttpCode(200)
   parseExpense(@CurrentUserId() userId: string, @Body() dto: ParseExpenseDto) {
     return this.ai.parseExpense(userId, dto);
+  }
+
+  /** Reports: a question in, the filters to show and a written answer out. */
+  @Post('report-ask')
+  @HttpCode(200)
+  reportAsk(@CurrentUserId() userId: string, @Body() dto: ReportAskDto) {
+    return this.ai.reportAsk(userId, dto);
+  }
+
+  /** Reports: plain-language insights for the report on screen. */
+  @Post('insights')
+  @HttpCode(200)
+  insights(@CurrentUserId() userId: string, @Body() dto: ReportViewDto) {
+    return this.ai.reportInsights(userId, dto);
   }
 
   @Post('categorize')

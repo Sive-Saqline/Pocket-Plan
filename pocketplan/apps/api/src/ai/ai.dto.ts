@@ -1,5 +1,7 @@
 import { Transform } from 'class-transformer';
 import {
+  ArrayMaxSize,
+  IsArray,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -43,4 +45,47 @@ export class CategorizeDto {
   @IsOptional()
   @IsUUID('4', { message: 'Unknown group' })
   groupId?: string;
+}
+
+/** The report on screen (Step 20): what an insight is about. */
+export class ReportViewDto {
+  /** First and last day shown (YYYY-MM-DD, inclusive). */
+  @Matches(DATE, { message: 'start must be YYYY-MM-DD' })
+  start: string;
+
+  @Matches(DATE, { message: 'end must be YYYY-MM-DD' })
+  end: string;
+
+  @IsOptional()
+  @IsUUID('4', { message: 'Unknown group' })
+  groupId?: string;
+
+  /** Personal: category ids. Group: category keys. */
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(30)
+  @IsString({ each: true })
+  @MaxLength(40, { each: true })
+  categories?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(30)
+  @IsString({ each: true })
+  @MaxLength(40, { each: true })
+  wallets?: string[];
+
+  /** The user's local date (what "this month" means). */
+  @IsOptional()
+  @Matches(DATE, { message: 'today must be YYYY-MM-DD' })
+  today?: string;
+}
+
+/** A question about spending, asked from the report currently on screen. */
+export class ReportAskDto extends ReportViewDto {
+  @Transform(trim)
+  @IsString()
+  @IsNotEmpty({ message: 'Ask something, e.g. "Food in the last 3 months"' })
+  @MaxLength(300, { message: 'Keep the question under 300 characters' })
+  question: string;
 }

@@ -1,5 +1,8 @@
 import { Transform } from 'class-transformer';
 import {
+  ArrayMaxSize,
+  ValidateIf,
+  IsArray,
   IsBoolean,
   IsIn,
   IsNotEmpty,
@@ -24,6 +27,14 @@ import { FREQUENCIES, type Frequency } from './schedule';
 const money = { maxDecimalPlaces: 2, allowNaN: false, allowInfinity: false };
 const trim = ({ value }: { value: unknown }) =>
   typeof value === 'string' ? value.trim() : value;
+/** "a, b,,c" -> ["a", "b", "c"]; anything else is left for validation to refuse. */
+const commaList = ({ value }: { value: unknown }) =>
+  typeof value === 'string'
+    ? value
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+    : value;
 
 export const DATE = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
 export const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
@@ -96,17 +107,52 @@ export class MonthQuery {
 }
 
 /** GET /reports?from=YYYY-MM&to=YYYY-MM[&group_id=<uuid>] */
+/**
+ * A range of whole months (from, to: YYYY-MM) or of any days (start, end:
+ * YYYY-MM-DD, at most a year). One pair or the other.
+ */
 export class ReportQuery {
+  @ValidateIf((q: ReportQuery) => q.start === undefined || q.from !== undefined)
   @Matches(MONTH, { message: 'from must be YYYY-MM' })
-  from: string;
+  from?: string;
 
+  @ValidateIf((q: ReportQuery) => q.start === undefined || q.to !== undefined)
   @Matches(MONTH, { message: 'to must be YYYY-MM' })
-  to: string;
+  to?: string;
+
+  @ValidateIf((q: ReportQuery) => q.from === undefined || q.start !== undefined)
+  @Matches(DATE, { message: 'start must be YYYY-MM-DD' })
+  start?: string;
+
+  @ValidateIf((q: ReportQuery) => q.from === undefined || q.end !== undefined)
+  @Matches(DATE, { message: 'end must be YYYY-MM-DD' })
+  end?: string;
 
   /** Report on one group I belong to instead of my personal spending. */
   @IsOptional()
   @IsUUID('4', { message: 'group_id must be a group id' })
   group_id?: string;
+
+  /**
+   * Comma-separated. Personal: category ids. Group: category keys (food,
+   * transport, ...). Unknown ones are ignored.
+   */
+  @IsOptional()
+  @Transform(commaList)
+  @IsArray()
+  @ArrayMaxSize(30)
+  @IsString({ each: true })
+  @MaxLength(40, { each: true })
+  categories?: string[];
+
+  /** Comma-separated wallet ids (personal reports only). */
+  @IsOptional()
+  @Transform(commaList)
+  @IsArray()
+  @ArrayMaxSize(30)
+  @IsString({ each: true })
+  @MaxLength(40, { each: true })
+  wallets?: string[];
 }
 
 // A wallet's balance is typed in by the user and is informational only

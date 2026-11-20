@@ -1,6 +1,6 @@
 # Step 18: AI: plain-language entry & auto-categorize
 
-**Status:** 🟡 Built, waiting for your test · **PRD:** 6.14, 6.15, 11 · **Depends on:** Step 17
+**Status:** ✅ Done (wrapped up 2026-11-20) · **PRD:** 6.14, 6.15, 11 · **Depends on:** Step 17
 
 > Built 2026-11-20.
 > - **Provider:** Google Gemini (AI Studio key) instead of Anthropic Claude, by choice. Settings in `apps/api/.env`: `GEMINI_API_KEY`, optional `AI_MODEL` (default `gemini-2.5-flash`) and `AI_TIMEOUT_MS` (default 10000). With no key, the AI calls answer "not set up" and every form still works by hand. The model sits behind `AiProvider` (`apps/api/src/ai/`), so another provider can be added later without touching the rest.

@@ -137,10 +137,11 @@ describe('Reports (e2e)', () => {
       ['bKash', 300.2],
       ['Cash', 120.6],
     ]);
+    expect(body.trendBy).toBe('month');
     expect(body.trend).toEqual([
-      { month: '2026-09', total: 0.3, count: 2 },
-      { month: '2026-10', total: 420.5, count: 2 },
-      { month: '2026-11', total: 0, count: 0 },
+      { key: '2026-09', total: 0.3, count: 2 },
+      { key: '2026-10', total: 420.5, count: 2 },
+      { key: '2026-11', total: 0, count: 0 },
     ]);
   });
 
@@ -176,6 +177,71 @@ describe('Reports (e2e)', () => {
       { month: '2026-10', target: 500, saved: 300 },
       { month: '2026-11', target: null, saved: 0 },
     ]);
+  });
+
+  it('compares with the previous range of the same length', async () => {
+    const { body } = await report().expect(200);
+    expect(body.previous).toMatchObject({
+      start: '2026-06-01',
+      end: '2026-08-31',
+      total: 0.1, // 31 August
+    });
+  });
+
+  it('covers any days (start, end): by day, compared with the days before', async () => {
+    const { body } = await as(rafi)
+      .get('/reports?start=2026-09-30&end=2026-10-15')
+      .expect(200);
+    expect(body).toMatchObject({
+      start: '2026-09-30',
+      end: '2026-10-15',
+      days: 16,
+      wholeMonths: false,
+      fullMonths: [],
+      total: 120.7, // 30 Sep + 15 Oct
+      count: 2,
+      trendBy: 'day',
+      previous: { start: '2026-09-14', end: '2026-09-29', total: 0 },
+    });
+    expect(body.trend).toHaveLength(16);
+    expect(body.trend[0]).toEqual({ key: '2026-09-30', total: 0.2, count: 1 });
+    // budgets and savings are monthly: no month is fully covered here
+    expect(body.budget.status).toBe('none');
+    expect(body.savings.target).toBeNull();
+  });
+
+  it('rejects bad day ranges', async () => {
+    const days = (q: string) => as(rafi).get(`/reports?${q}`);
+    await days('start=2026-10-15&end=2026-10-01').expect(400);
+    await days('start=2025-01-01&end=2026-01-02').expect(400); // over a year
+    await days('start=2026-02-30&end=2026-03-05').expect(400);
+    await days('start=2026-10-01').expect(400); // no end
+    await days('').expect(400);
+  });
+
+  it('narrows to categories and wallets (Step 20), comparison included', async () => {
+    const filtered = (query: string) =>
+      as(rafi).get(`/reports?from=2026-09&to=2026-11&${query}`).expect(200);
+
+    const food_ = (await filtered(`categories=${food}`)).body;
+    expect(food_.total).toBe(0.3);
+    expect(food_.filters).toEqual({ categories: [food], wallets: [] });
+    expect(food_.byCategory.map((c: { id: string }) => c.id)).toEqual([food]);
+    expect(food_.previous.total).toBe(0.1);
+
+    const onBkash = (await filtered(`wallets=${bkash}`)).body;
+    expect(onBkash.total).toBe(300.2);
+    expect(onBkash.previous.total).toBe(0);
+
+    const both = (
+      await filtered(`categories=${food},${transport}&wallets=${bkash}`)
+    ).body;
+    expect(both.total).toBe(0.2);
+
+    // a category that isn't mine is ignored, not an error
+    const other = (await filtered('categories=not-mine')).body;
+    expect(other.filters.categories).toEqual([]);
+    expect(other.total).toBe(420.8);
   });
 
   it("never shows another user's spending", async () => {

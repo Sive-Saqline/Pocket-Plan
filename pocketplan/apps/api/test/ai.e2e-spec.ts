@@ -269,6 +269,130 @@ describe('AI suggestions (e2e)', () => {
       .expect(201);
   });
 
+  describe('Reports (Step 20)', () => {
+    let mina: string;
+    let food: string;
+    let cash: string;
+    const view = {
+      start: '2026-09-01',
+      end: '2026-11-30',
+      today: '2026-11-20',
+    };
+    const narration = {
+      answer: 'অক্টোবরে খাবারে ৳250',
+      summary: 'You spent ৳350.',
+      notable: '',
+      forecast: 'If the pattern holds, about ৳175.',
+    };
+
+    beforeAll(async () => {
+      mina = t.signUp('Mina');
+      const categories = (await as(mina).get('/categories').expect(200))
+        .body as { id: string; name: string }[];
+      food = categories.find((c) => c.name === 'Food')!.id;
+      cash = (await as(mina).get('/accounts').expect(200)).body[0].id;
+      for (const [amount, expenseDate] of [
+        [100, '2026-09-10'],
+        [250, '2026-10-05'],
+        [40, '2026-08-01'], // previous period
+      ] as const) {
+        await as(mina)
+          .post('/expenses')
+          .send({ amount, categoryId: food, accountId: cash, expenseDate })
+          .expect(201);
+      }
+    });
+
+    /** First call: filters; second: the narration. */
+    const answerReportAsk = (filters: unknown) => {
+      ai.answer = async (req) =>
+        req.system.includes('set the filters') ? filters : narration;
+    };
+
+    it('turns a question into a filtered report and an answer', async () => {
+      answerReportAsk({
+        start: '2026-10-01',
+        end: '2026-10-31',
+        groupId: null,
+        categoryIds: [food, 'not-mine'],
+        walletIds: [],
+        groupCategories: [],
+      });
+      const res = await as(mina)
+        .post('/ai/report-ask')
+        .send({ ...view, question: 'অক্টোবরে খাবারে কত খরচ?' })
+        .expect(200);
+
+      expect(res.body).toEqual({
+        view: {
+          start: '2026-10-01',
+          end: '2026-10-31',
+          groupId: null,
+          categories: [food],
+          wallets: [],
+        },
+        answer: narration.answer,
+        insights: {
+          summary: narration.summary,
+          notable: '',
+          forecast: narration.forecast,
+        },
+      });
+
+      // The narration got the database's numbers, in the question's language
+      const [, narrate] = ai.asked;
+      expect(narrate.system).toContain('same language and script as QUESTION');
+      const facts = JSON.parse(narrate.prompt.split('\n')[0].slice(8));
+      expect(facts.total).toBe(250);
+      expect(facts.previousPeriod).toMatchObject({
+        from: 'September 2026',
+        total: 100,
+        changePercent: 150,
+      });
+      expect(facts.filteredTo).toEqual({ categories: ['Food'], wallets: [] });
+    });
+
+    it('writes insights for the report on screen, and changes nothing', async () => {
+      const before = (await as(mina).get('/expenses?month=2026-10').expect(200))
+        .body;
+      ai.answer = async () => narration;
+      const res = await as(mina).post('/ai/insights').send(view).expect(200);
+      expect(res.body).toEqual({
+        summary: narration.summary,
+        notable: '',
+        forecast: narration.forecast,
+      });
+      expect(ai.asked).toHaveLength(1);
+      expect(ai.asked[0].system).toContain('Write in English');
+      const facts = JSON.parse(ai.asked[0].prompt.slice(8));
+      expect(facts.total).toBe(350);
+      expect(facts.forecastBaseline).toBe(175); // Sep and Oct; Nov isn't over
+      expect(
+        (await as(mina).get('/expenses?month=2026-10').expect(200)).body,
+      ).toEqual(before);
+    });
+
+    it('refuses a bad range before asking the AI', async () => {
+      await as(mina)
+        .post('/ai/insights')
+        .send({ ...view, start: '2025-01-01' })
+        .expect(400);
+      await as(mina)
+        .post('/ai/report-ask')
+        .send({ ...view, question: '   ' })
+        .expect(400);
+      expect(ai.asked).toHaveLength(0);
+    });
+
+    it('passes AI failures on as messages', async () => {
+      ai.answer = async () => {
+        throw new AiError('busy');
+      };
+      const res = await as(mina).post('/ai/insights').send(view).expect(503);
+      expect(res.body.message).toMatch(/busy/);
+    });
+  });
+
   it('limits each user to 20 AI calls a minute', async () => {
     const busy = t.signUp('Busy');
     for (let i = 0; i < 20; i++) {

@@ -7,7 +7,13 @@ import {
 import { randomUUID } from 'node:crypto';
 import { budgetView } from './budgets';
 import { savingsView } from './savings';
-import { assertReportRange, personalReport } from './reports';
+import {
+  assertDateRange,
+  personalReport,
+  previousOf,
+  type ReportFilters,
+  type ReportRange,
+} from './reports';
 import {
   CopyBudgetsDto,
   CreateCategoryDto,
@@ -343,9 +349,18 @@ export class LedgerService {
   }
 
   /** Reports (PRD §6.9) on personal spending, `from`–`to` inclusive (YYYY-MM). */
-  async report(userId: string, from: string, to: string) {
-    assertReportRange(from, to);
-    return personalReport(await this.store.report(userId, from, to), from, to);
+  /** Also reads the previous range (see previousOf), for the comparison. */
+  async report(
+    userId: string,
+    range: ReportRange,
+    filters: ReportFilters = {},
+  ) {
+    assertDateRange(range);
+    const source = await this.store.report(userId, {
+      start: previousOf(range).start,
+      end: range.end,
+    });
+    return personalReport(source, range, filters);
   }
 
   /** Dashboard numbers for one month (YYYY-MM). */

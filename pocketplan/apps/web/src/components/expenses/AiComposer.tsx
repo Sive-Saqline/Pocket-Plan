@@ -3,7 +3,6 @@
 import { ArrowUp, Mic, RotateCcw, Sparkles, Square } from "lucide-react";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import type { ExpenseSuggestion } from "@/lib/ai";
-import { ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { isoDate } from "@/lib/dates";
 import { useSpeechInput } from "@/lib/use-speech";
@@ -49,14 +48,19 @@ export function AskAiButton({ open, onClick }: { open: boolean; onClick: () => v
   );
 }
 
-type Result = { text: string; filled: string[] };
+type Result = { text: string; summary: string };
 
 /**
  * A chat-style box, kept to one row: the sentence, a mic, and send. Typed
  * or spoken, the sentence fills the form below for the user to check (PRD
  * §6.14). Nothing is saved here, and the fill can be undone.
+ *
+ * `onSend` replaces the form fill with any other action (Reports, Step 20):
+ * it resolves with the line shown next to Undo, or throws an Error whose
+ * message is shown.
  */
 export function AiComposer<S extends ExpenseSuggestion>({
+  onSend,
   groupId,
   initialText = "",
   placeholder,
@@ -64,13 +68,15 @@ export function AiComposer<S extends ExpenseSuggestion>({
   onUndo,
   onClose,
 }: {
+  /** Any other action instead of the expense fill (see above). */
+  onSend?: (sentence: string) => Promise<string>;
   /** Fill a shared expense in this group. */
   groupId?: string;
   initialText?: string;
   /** An example sentence, e.g. "Lunch 250 by bKash yesterday". */
   placeholder: string;
   /** Fill the form; returns the names of the fields it changed. */
-  onSuggestion: (suggestion: S, text: string) => string[];
+  onSuggestion?: (suggestion: S, text: string) => string[];
   /** Put the form back the way it was before the fill. */
   onUndo: () => void;
   onClose: () => void;
@@ -135,18 +141,26 @@ export function AiComposer<S extends ExpenseSuggestion>({
     setBusy(true);
     setError(null);
     try {
+      if (onSend) {
+        setResult({ text: sentence, summary: await onSend(sentence) });
+        return;
+      }
       const suggestion = await request<S>("/ai/parse-expense", {
         method: "POST",
         body: { text: sentence, today: isoDate(), ...(groupId && { groupId }) },
       });
-      const filled = onSuggestion(suggestion, sentence);
+      const filled = onSuggestion?.(suggestion, sentence) ?? [];
       if (filled.length === 0) {
         setError('Couldn\'t find an expense in that. Try something like "Lunch 250".');
       } else {
-        setResult({ text: sentence, filled });
+        setResult({ text: sentence, summary: `Filled ${listOf(filled)}. Check it, then save.` });
       }
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Couldn't reach the AI. Fill in the form yourself.");
+      setError(
+        err instanceof Error && err.message
+          ? err.message
+          : "Couldn't reach the AI. Fill in the form yourself.",
+      );
     } finally {
       setBusy(false);
     }
@@ -242,9 +256,7 @@ export function AiComposer<S extends ExpenseSuggestion>({
       {result && (
         <div role="status" className="flex items-center gap-2 pl-4">
           <Sparkles aria-hidden size={14} className="shrink-0 text-accent" />
-          <p className="min-w-0 flex-1 text-sm text-text-muted">
-            <span className="text-text">Filled {listOf(result.filled)}.</span> Check it, then save.
-          </p>
+          <p className="min-w-0 flex-1 text-sm text-text">{result.summary}</p>
           <button
             type="button"
             onClick={undo}

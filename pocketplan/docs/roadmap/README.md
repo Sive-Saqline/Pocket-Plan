@@ -15,7 +15,7 @@ Last re-planned: 2026-11-13. Supabase moved forward to Step 11, so every later f
 
 ## Status key
 
-✅ Done · 🟡 In progress / partially done · ⏳ Not started · 🔁 Ongoing
+✅ Done · 🟡 In progress / partially done · ⏳ Not started · ⏸ On hold · 🔁 Ongoing
 
 ## Ongoing task (runs alongside every step)
 
@@ -49,9 +49,9 @@ Last re-planned: 2026-11-13. Supabase moved forward to Step 11, so every later f
 | 15 | [Groups & members](15-groups-and-members.md) | 6.10, 6.11 | 🟡 Built, waiting for your test |
 | 16 | [Group expenses & splitting](16-group-expenses-and-splitting.md) | 6.12 | 🟡 Built, waiting for your test |
 | 17 | [Balances, settlements & group budgets](17-balances-settlements-group-budgets.md) | 6.13, 9 | 🟡 Built, waiting for your test |
-| 18 | [AI: plain-language entry & auto-categorize](18-ai-entry-and-categorize.md) | 6.14, 6.15 | 🟡 Built, waiting for your test |
-| 19 | [Smart checks: unusual, duplicate & repeating expenses](19-smart-checks.md) | 6.17, 6.18 | ⏳ |
-| 20 | [AI: monthly insights](20-ai-monthly-insights.md) | 6.16 | ⏳ |
+| 18 | [AI: plain-language entry & auto-categorize](18-ai-entry-and-categorize.md) | 6.14, 6.15 | ✅ Done (2026-11-20) |
+| 19 | [Smart checks: unusual, duplicate & repeating expenses](19-smart-checks.md) | 6.17, 6.18 | ⏸ On hold (your call, 2026-11-20) |
+| 20 | [AI insights in Reports: ask a question, get insights](20-ai-monthly-insights.md) | 6.16 | 🟡 Built, waiting for your test |
 | 21 | [Installable app (PWA)](21-pwa.md) | Phase 8 | ⏳ |
 | 22 | [Final QA & release readiness](22-final-qa.md) | Phase 16 | ⏳ |
 | 23 | [Deployment](23-deployment.md) | Phase 16 | ⏳ (last) |

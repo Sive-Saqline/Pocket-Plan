@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { monthLabel } from "@/lib/dates";
 import { formatTaka } from "@/lib/money";
-import { compactTaka, type TrendPoint } from "@/lib/reports";
+import { compactTaka, type TrendBy, type TrendPoint } from "@/lib/reports";
 
 /** Smallest "round" number ≥ value (1, 2, 2.5, 5 × 10ⁿ) for the axis top. */
 function niceMax(value: number) {
@@ -15,22 +15,40 @@ function niceMax(value: number) {
   return 10 * magnitude;
 }
 
-const shortMonth = (month: string) => {
-  const [y, m] = month.split("-").map(Number);
-  return new Date(y, m - 1, 1).toLocaleDateString("en-GB", { month: "short" });
+const dateOf = (key: string) => {
+  const [y, m, d = 1] = key.split("-").map(Number);
+  return new Date(y, m - 1, d);
 };
 
+/** Full label: "November 2026" or "Thu 5 Nov". */
+const longLabel = (key: string, by: TrendBy) =>
+  by === "month"
+    ? monthLabel(key)
+    : dateOf(key).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+
+/** Axis label: "Nov", or "5" for a day ("1 Dec" on the first column and on a 1st). */
+const axisLabel = (key: string, by: TrendBy, first: boolean) =>
+  by === "month"
+    ? dateOf(key).toLocaleDateString("en-GB", { month: "short" })
+    : first || key.endsWith("-01")
+      ? dateOf(key).toLocaleDateString("en-GB", { day: "numeric", month: "short" })
+      : String(dateOf(key).getDate());
+
 /**
- * Spending per month as columns (one series, so one colour and no legend).
- * Each column is a button: hover, tap or focus shows its exact amount.
- * "Table" shows the same numbers as text.
+ * Spending per month (or per day, for short custom ranges) as columns: one
+ * series, so one colour and no legend. Each column is a button: hover, tap
+ * or focus shows its exact amount. "Table" shows the same numbers as text.
  */
-export function TrendChart({ points }: { points: TrendPoint[] }) {
+export function TrendChart({ points, by = "month" }: { points: TrendPoint[]; by?: TrendBy }) {
   const [view, setView] = useState<"chart" | "table">("chart");
   const [active, setActive] = useState<number | null>(null);
   const top = niceMax(Math.max(...points.map((p) => p.total)));
   const ticks = [top, top / 2, 0];
   const highest = points.reduce((best, p) => (p.total > best.total ? p : best), points[0]);
+  // Label every nth column so labels never crowd (fewer on phones).
+  const stepWide = Math.max(1, Math.ceil(points.length / 16));
+  const stepPhone = Math.max(1, Math.ceil(points.length / 7));
+  const gap = points.length > 31 ? "gap-px" : "gap-0.5 sm:gap-1";
 
   return (
     <div>
@@ -54,15 +72,15 @@ export function TrendChart({ points }: { points: TrendPoint[] }) {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-text-muted">
-              <th scope="col" className="py-2 font-medium">Month</th>
+              <th scope="col" className="py-2 font-medium">{by === "month" ? "Month" : "Day"}</th>
               <th scope="col" className="py-2 text-right font-medium">Expenses</th>
               <th scope="col" className="py-2 text-right font-medium">Spent</th>
             </tr>
           </thead>
           <tbody>
             {points.map((p) => (
-              <tr key={p.month} className="border-t border-border">
-                <th scope="row" className="py-2 text-left font-normal">{monthLabel(p.month)}</th>
+              <tr key={p.key} className="border-t border-border">
+                <th scope="row" className="py-2 text-left font-normal">{longLabel(p.key, by)}</th>
                 <td className="py-2 text-right font-mono tabular-nums text-text-muted">{p.count}</td>
                 <td className="py-2 text-right font-mono font-semibold tabular-nums">{formatTaka(p.total)}</td>
               </tr>
@@ -90,16 +108,21 @@ export function TrendChart({ points }: { points: TrendPoint[] }) {
                   style={{ top: `${i * 50}%` }}
                 />
               ))}
-              <ul className="absolute inset-0 flex items-end gap-0.5 sm:gap-1">
+              <ul className={`absolute inset-0 flex items-end ${gap}`}>
                 {points.map((p, i) => {
                   const height = (p.total / top) * 100;
                   const isActive = active === i;
-                  const align = i === 0 ? "left-0" : i === points.length - 1 ? "right-0" : "left-1/2 -translate-x-1/2";
+                  const align =
+                    i < points.length / 4
+                      ? "left-0"
+                      : i >= (points.length * 3) / 4
+                        ? "right-0"
+                        : "left-1/2 -translate-x-1/2";
                   return (
-                    <li key={p.month} className="relative flex h-full flex-1 justify-center">
+                    <li key={p.key} className="relative flex h-full flex-1 justify-center">
                       <button
                         type="button"
-                        aria-label={`${monthLabel(p.month)}: ${formatTaka(p.total)}, ${p.count} ${p.count === 1 ? "expense" : "expenses"}`}
+                        aria-label={`${longLabel(p.key, by)}: ${formatTaka(p.total)}, ${p.count} ${p.count === 1 ? "expense" : "expenses"}`}
                         onPointerEnter={() => setActive(i)}
                         onFocus={() => setActive(i)}
                         onBlur={() => setActive(null)}
@@ -117,7 +140,7 @@ export function TrendChart({ points }: { points: TrendPoint[] }) {
                           className={`pointer-events-none absolute z-10 w-max rounded-lg bg-surface-elevated px-3 py-2 text-sm shadow-lg ring-1 ring-border ${align}`}
                           style={{ bottom: `calc(${Math.min(height, 100)}% + 8px)` }}
                         >
-                          <p className="font-medium">{monthLabel(p.month)}</p>
+                          <p className="font-medium">{longLabel(p.key, by)}</p>
                           <p className="font-mono font-semibold tabular-nums">{formatTaka(p.total)}</p>
                           <p className="text-xs text-text-muted">
                             {p.count} {p.count === 1 ? "expense" : "expenses"}
@@ -130,21 +153,26 @@ export function TrendChart({ points }: { points: TrendPoint[] }) {
               </ul>
             </div>
 
-            {/* x-axis labels */}
+            {/* x-axis labels: only every nth column, centred under it */}
             <span />
-            <ol aria-hidden className="mt-1.5 flex gap-0.5 text-center text-xs text-text-muted sm:gap-1">
+            <ol aria-hidden className={`mt-1.5 flex h-4 text-xs text-text-muted ${gap}`}>
               {points.map((p, i) => (
-                <li key={p.month} className="flex-1 truncate">
-                  {/* 12 columns are tight on phones: label every other one there */}
-                  <span className={points.length > 6 && i % 2 === 1 ? "hidden sm:inline" : ""}>{shortMonth(p.month)}</span>
+                <li key={p.key} className="relative flex-1">
+                  <span
+                    className={`absolute left-1/2 -translate-x-1/2 whitespace-nowrap ${
+                      i % stepPhone === 0 ? "inline" : "hidden"
+                    } ${i % stepWide === 0 ? "sm:inline" : "sm:hidden"}`}
+                  >
+                    {axisLabel(p.key, by, i === 0)}
+                  </span>
                 </li>
               ))}
             </ol>
           </div>
           <figcaption className="mt-2 text-sm text-text-muted">
             {highest.total > 0
-              ? `Highest: ${monthLabel(highest.month)}, ${formatTaka(highest.total)}.`
-              : "No spending in these months."}
+              ? `Highest: ${longLabel(highest.key, by)}, ${formatTaka(highest.total)}.`
+              : `No spending on these ${by === "month" ? "months" : "days"}.`}
           </figcaption>
         </figure>
       )}
