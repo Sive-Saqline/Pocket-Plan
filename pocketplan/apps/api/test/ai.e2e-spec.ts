@@ -393,6 +393,45 @@ describe('AI suggestions (e2e)', () => {
     });
   });
 
+  it('fills a recurring expense from a sentence, and saves nothing', async () => {
+    const lena = t.signUp('Lena');
+    const categories = (await as(lena).get('/categories').expect(200)).body as {
+      id: string;
+      name: string;
+    }[];
+    const bills = categories.find((c) => c.name === 'Bills')!.id;
+    ai.answer = async () => ({
+      amount: 1200,
+      description: 'Internet bill',
+      categoryId: bills,
+      accountId: 'not-mine',
+      frequency: 'MONTHLY',
+      startDate: '2026-12-05',
+    });
+    const res = await as(lena)
+      .post('/ai/parse-recurring')
+      .send({
+        text: 'Internet bill 1200 every month on the 5th',
+        today: '2026-11-20',
+      })
+      .expect(200);
+    expect(res.body).toEqual({
+      amount: 1200,
+      description: 'Internet bill',
+      categoryId: bills,
+      accountId: null,
+      frequency: 'MONTHLY',
+      startDate: '2026-12-05',
+    });
+    expect(ai.asked[0].prompt).toContain('"name":"Bills"');
+    expect(
+      (await as(lena).get('/recurring-expenses').expect(200)).body,
+    ).toEqual([]);
+
+    await as(lena).post('/ai/parse-recurring').send({ text: ' ' }).expect(400);
+    expect(ai.asked).toHaveLength(1);
+  });
+
   it('limits each user to 20 AI calls a minute', async () => {
     const busy = t.signUp('Busy');
     for (let i = 0; i < 20; i++) {

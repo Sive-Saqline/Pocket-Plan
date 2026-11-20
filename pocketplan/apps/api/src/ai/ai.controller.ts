@@ -3,6 +3,7 @@ import { AuthGuard, CurrentUserId } from '../auth/auth.guard';
 import {
   CategorizeDto,
   ParseExpenseDto,
+  ParseRecurringDto,
   ReportAskDto,
   ReportViewDto,
 } from './ai.dto';
@@ -35,6 +36,16 @@ export class AiController {
   @HttpCode(200)
   insights(@CurrentUserId() userId: string, @Body() dto: ReportViewDto) {
     return this.ai.reportInsights(userId, dto);
+  }
+
+  /** Recurring expenses: a sentence in, the recurring form filled out. */
+  @Post('parse-recurring')
+  @HttpCode(200)
+  parseRecurring(
+    @CurrentUserId() userId: string,
+    @Body() dto: ParseRecurringDto,
+  ) {
+    return this.ai.parseRecurring(userId, dto);
   }
 
   @Post('categorize')

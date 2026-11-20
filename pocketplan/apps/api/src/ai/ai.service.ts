@@ -14,6 +14,7 @@ import { AiError, AiProvider, type AiRequest } from './ai.provider';
 import {
   CategorizeDto,
   ParseExpenseDto,
+  ParseRecurringDto,
   ReportAskDto,
   ReportViewDto,
 } from './ai.dto';
@@ -35,6 +36,8 @@ import {
   groupSuggestion,
   personalParseRequest,
   personalSuggestion,
+  recurringParseRequest,
+  recurringSuggestion,
   type GroupOptions,
 } from './suggestions';
 
@@ -135,6 +138,16 @@ export class AiService {
     const options = { categories, wallets: accounts, groups };
     const raw = await this.ask(personalParseRequest(text, options, day));
     return personalSuggestion(raw, options, day);
+  }
+
+  /** Fills the recurring-expense form (amount, name, category, wallet, how often, first due). */
+  async parseRecurring(userId: string, { text, today }: ParseRecurringDto) {
+    this.throttle(userId);
+    const day = today ?? isoDate(new Date());
+    const { categories, accounts } = await this.ledger.entryOptions(userId);
+    const options = { categories, wallets: accounts };
+    const raw = await this.ask(recurringParseRequest(text, options, day));
+    return recurringSuggestion(raw, options, day);
   }
 
   async categorize(userId: string, { description, groupId }: CategorizeDto) {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { AiComposer, AskAiButton } from "@/components/expenses/AiComposer";
 import { CategoryPicker, inputClass, WalletPicker } from "@/components/expenses/Pickers";
 import { CloseButton } from "@/components/ui/CloseButton";
 import { ApiError } from "@/lib/api";
@@ -10,6 +11,19 @@ import { frequencies, type Category, type Frequency, type RecurringExpense, type
 import { parseTaka } from "@/lib/money";
 
 type Field = "description" | "amount" | "categoryId" | "accountId" | "date";
+
+/** POST /ai/parse-recurring: only what the sentence said is set. */
+interface RecurringSuggestion {
+  amount: number | null;
+  description: string;
+  categoryId: string | null;
+  accountId: string | null;
+  frequency: Frequency | null;
+  startDate: string | null;
+}
+
+const listOf = (items: string[]) =>
+  items.length <= 1 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
 
 export function RecurringSheet({
   open,
@@ -43,6 +57,16 @@ export function RecurringSheet({
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [session, setSession] = useState(0);
+  // Ask AI (same as Add expense): closed until asked for; manual entry first.
+  const [aiOpen, setAiOpen] = useState(false);
+  const beforeAi = useRef<{
+    description: string;
+    amount: string;
+    frequency: Frequency;
+    date: string;
+    categoryId: string;
+    accountId: string;
+  } | null>(null);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -59,6 +83,8 @@ export function RecurringSheet({
       setFormError(null);
       setBusy(false);
       setConfirmDelete(false);
+      setAiOpen(false);
+      beforeAi.current = null;
       setSession((s) => s + 1);
       dialog.showModal();
     } else if (!open && dialog.open) {
@@ -67,6 +93,59 @@ export function RecurringSheet({
   }, [open, template, wallets]);
 
   const clear = (field: Field) => setErrors((e) => ({ ...e, [field]: undefined }));
+
+  /** Fills only what the sentence gave; the user checks it and saves. */
+  async function askAi(sentence: string) {
+    const s = await request<RecurringSuggestion>("/ai/parse-recurring", {
+      method: "POST",
+      body: { text: sentence, today: isoDate() },
+    });
+    // Undo goes back to before the first fill, even after several.
+    beforeAi.current ??= { description, amount, frequency, date, categoryId, accountId };
+    const filled: string[] = [];
+    if (s.description) {
+      setDescription(s.description);
+      filled.push("name");
+    }
+    if (s.amount !== null) {
+      setAmount(String(s.amount));
+      filled.push("amount");
+    }
+    if (s.frequency) {
+      setFrequency(s.frequency);
+      filled.push("how often");
+    }
+    if (s.startDate) {
+      setDate(s.startDate);
+      filled.push("first due date");
+    }
+    if (s.categoryId) {
+      setCategoryId(s.categoryId);
+      filled.push("category");
+    }
+    if (s.accountId) {
+      setAccountId(s.accountId);
+      filled.push("wallet");
+    }
+    if (filled.length === 0) {
+      throw new Error('Couldn\'t find a repeating expense in that. Try "Internet bill 1200 every month on the 5th".');
+    }
+    setErrors({});
+    setFormError(null);
+    return `Filled ${listOf(filled)}. Check it, then save.`;
+  }
+
+  function undoAi() {
+    const b = beforeAi.current;
+    if (!b) return;
+    setDescription(b.description);
+    setAmount(b.amount);
+    setFrequency(b.frequency);
+    setDate(b.date);
+    setCategoryId(b.categoryId);
+    setAccountId(b.accountId);
+    beforeAi.current = null;
+  }
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -125,10 +204,11 @@ export function RecurringSheet({
       className="m-auto mb-0 max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-t-2xl bg-surface p-0 text-text sm:mb-auto sm:rounded-2xl"
     >
       <form method="post" onSubmit={submit} noValidate className="flex flex-col gap-5 p-4 sm:p-6">
-        <header className="flex items-center justify-between">
-          <h2 id="recurring-sheet-title" className="text-xl font-semibold">
+        <header className="flex items-center gap-2">
+          <h2 id="recurring-sheet-title" className="flex-1 text-xl font-semibold">
             {template ? "Edit recurring expense" : "New recurring expense"}
           </h2>
+          {!template && <AskAiButton open={aiOpen} onClick={() => setAiOpen((o) => !o)} />}
           <CloseButton onClick={onClose} />
         </header>
 
@@ -136,6 +216,16 @@ export function RecurringSheet({
           <p role="alert" className="rounded-lg border border-danger/40 bg-danger/10 px-3 py-2.5 text-sm">
             {formError}
           </p>
+        )}
+
+        {!template && aiOpen && (
+          <AiComposer
+            key={`ai-${session}`}
+            placeholder="e.g. Internet bill 1200 every month on the 5th"
+            onSend={askAi}
+            onUndo={undoAi}
+            onClose={() => setAiOpen(false)}
+          />
         )}
 
         <div>
@@ -230,7 +320,7 @@ export function RecurringSheet({
           error={errors.categoryId}
         />
         <WalletPicker
-          key={session}
+          key={`wallets-${session}`}
           wallets={wallets}
           value={accountId}
           onChange={(id) => {

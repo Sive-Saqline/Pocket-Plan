@@ -89,3 +89,21 @@ export class ReportAskDto extends ReportViewDto {
   @MaxLength(300, { message: 'Keep the question under 300 characters' })
   question: string;
 }
+
+/** "Internet bill 1200 every month on the 5th" → the recurring form. */
+export class ParseRecurringDto {
+  @Transform(trim)
+  @IsString()
+  @IsNotEmpty({
+    message: 'Describe it, e.g. "Internet bill 1200 every month on the 5th"',
+  })
+  @MaxLength(300, {
+    message: 'Keep it to one expense (300 characters at most)',
+  })
+  text: string;
+
+  /** The user's local date (what "the 5th" or "next Friday" counts from). */
+  @IsOptional()
+  @Matches(DATE, { message: 'today must be YYYY-MM-DD' })
+  today?: string;
+}

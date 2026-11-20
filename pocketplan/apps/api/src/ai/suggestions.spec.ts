@@ -7,6 +7,8 @@ import {
   groupSuggestion,
   personalParseRequest,
   personalSuggestion,
+  recurringParseRequest,
+  recurringSuggestion,
   type GroupOptions,
   type PersonalOptions,
 } from './suggestions';
@@ -223,5 +225,73 @@ describe('requests', () => {
     const req = groupParseRequest('I paid 500', group, TODAY);
     expect(req.prompt).toContain('{"userId":"u-rafi","name":"Rafi","me":true}');
     expect(req.prompt).toContain('{"userId":"u-nusrat","name":"Nusrat"}');
+  });
+});
+
+describe('recurringSuggestion', () => {
+  it('passes through a good answer, with a first due date ahead of today', () => {
+    expect(
+      recurringSuggestion(
+        {
+          amount: 1200,
+          description: ' Internet  bill ',
+          categoryId: 'cat-food',
+          accountId: 'w-bkash',
+          frequency: 'MONTHLY',
+          startDate: '2026-12-05',
+        },
+        personal,
+        TODAY,
+      ),
+    ).toEqual({
+      amount: 1200,
+      description: 'Internet bill',
+      categoryId: 'cat-food',
+      accountId: 'w-bkash',
+      frequency: 'MONTHLY',
+      startDate: '2026-12-05',
+    });
+  });
+
+  it('drops unknown ids and frequencies, and dates over a year away', () => {
+    const s = recurringSuggestion(
+      {
+        amount: 0,
+        categoryId: 'cat-x',
+        accountId: 'w-x',
+        frequency: 'FORTNIGHTLY',
+        startDate: '2028-01-01',
+      },
+      personal,
+      TODAY,
+    );
+    expect(s).toEqual({
+      amount: null,
+      description: '',
+      categoryId: null,
+      accountId: null,
+      frequency: null,
+      startDate: null,
+    });
+    expect(
+      recurringSuggestion({ startDate: '2024-01-01' }, personal, TODAY)
+        .startDate,
+    ).toBeNull();
+    expect(
+      recurringSuggestion({ startDate: '2026-02-30' }, personal, TODAY)
+        .startDate,
+    ).toBeNull();
+  });
+
+  it('asks about how often and when, with the sentence fenced as data', () => {
+    const req = recurringParseRequest(
+      'Rent 15000 every month on the 1st',
+      personal,
+      TODAY,
+    );
+    expect(req.system).toContain('Today is 2026-11-20 (Friday)');
+    expect(req.system).toContain('DAILY, WEEKLY, MONTHLY or YEARLY');
+    expect(req.prompt).toContain('"""\nRent 15000 every month on the 1st\n"""');
+    expect(req.prompt).not.toContain('GROUPS');
   });
 });

@@ -6,6 +6,7 @@
 import { SPLIT_TYPES, type SplitType } from '../balances/split';
 import { DATE } from '../ledger/ledger.dto';
 import { CATEGORY_ICONS, type CategoryIcon } from '../ledger/ledger.types';
+import { FREQUENCIES, type Frequency } from '../ledger/schedule';
 import type { AiRequest } from './ai.provider';
 
 const MAX_AMOUNT = 10_000_000;
@@ -136,6 +137,91 @@ export function personalSuggestion(
     expenseDate: dateFrom(r.expenseDate, today),
     group: options.groups.find((g) => g.id === groupId) ?? null,
   };
+}
+
+// --- recurring: parse ---------------------------------------------------------
+
+/** How far from today a first due date may be (a year either way). */
+const RECURRING_DATE_WINDOW_DAYS = 366;
+
+export function recurringParseRequest(
+  text: string,
+  options: Pick<PersonalOptions, 'categories' | 'wallets'>,
+  today: string,
+): AiRequest {
+  return {
+    system: `You fill in the "New recurring expense" form of PocketPlan, a personal finance app used in Bangladesh. The user describes one expense that repeats (rent, a bill, a subscription, a fee) in a sentence.
+${COMMON_RULES}
+Today is ${today} (${weekday(today)}).
+Return one JSON object:
+- ${amountRule}
+- description: a short name for it in 1 to 4 words, in the language the user wrote in, e.g. "Internet bill", "House rent". Empty string if unclear.
+- categoryId: the id of the best matching entry in CATEGORIES, or null if none fits.
+- accountId: the id of the entry in WALLETS only if the sentence says how it is paid (e.g. bKash, card, cash, a bank name); otherwise null.
+- frequency: DAILY, WEEKLY, MONTHLY or YEARLY if the sentence says how often (every month, প্রতি মাসে, weekly, yearly...); otherwise null.
+- startDate: YYYY-MM-DD of the next (or first) time it is due if the sentence says when ("on the 5th" = the next 5th from today, including today; "every Friday" = the next Friday; "from 1 December"); otherwise null.`,
+    prompt: [
+      `CATEGORIES: ${JSON.stringify(options.categories.map(pick))}`,
+      `WALLETS: ${JSON.stringify(options.wallets.map(({ id, name, type }) => ({ id, name, type })))}`,
+      sentence(text),
+    ].join('\n'),
+    schema: {
+      type: 'OBJECT',
+      properties: {
+        amount: nullable('NUMBER'),
+        description: { type: 'STRING' },
+        categoryId: nullable('STRING'),
+        accountId: nullable('STRING'),
+        frequency: nullable('STRING'),
+        startDate: nullable('STRING', 'YYYY-MM-DD'),
+      },
+      required: [
+        'amount',
+        'description',
+        'categoryId',
+        'accountId',
+        'frequency',
+        'startDate',
+      ],
+    },
+  };
+}
+
+export interface RecurringSuggestion {
+  amount: number | null;
+  description: string;
+  categoryId: string | null;
+  accountId: string | null;
+  frequency: Frequency | null;
+  /** First due date; may be in the future, within a year of today. */
+  startDate: string | null;
+}
+
+export function recurringSuggestion(
+  raw: unknown,
+  options: Pick<PersonalOptions, 'categories' | 'wallets'>,
+  today: string,
+): RecurringSuggestion {
+  const r = asRecord(raw);
+  // Unlike a spent expense, a first due date may be ahead of today.
+  const latest = shiftDays(today, RECURRING_DATE_WINDOW_DAYS);
+  const earliest = shiftDays(today, -RECURRING_DATE_WINDOW_DAYS);
+  const start = dateFrom(r.startDate, latest);
+  return {
+    amount: amountFrom(r.amount),
+    description: descriptionFrom(r.description),
+    categoryId: idFrom(r.categoryId, options.categories),
+    accountId: idFrom(r.accountId, options.wallets),
+    frequency: FREQUENCIES.find((f) => f === r.frequency) ?? null,
+    startDate: start && start >= earliest ? start : null,
+  };
+}
+
+function shiftDays(date: string, delta: number) {
+  const [y, m, d] = date.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d) + delta * 86_400_000)
+    .toISOString()
+    .slice(0, 10);
 }
 
 // --- group: parse -------------------------------------------------------------
