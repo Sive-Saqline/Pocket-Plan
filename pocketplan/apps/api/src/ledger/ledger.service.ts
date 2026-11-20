@@ -56,6 +56,12 @@ export class LedgerService {
     return (await this.store.read(userId)).accounts;
   }
 
+  /** Categories and wallets in one read (what the AI may pick from, Step 18). */
+  async entryOptions(userId: string) {
+    const { categories, accounts } = await this.store.read(userId);
+    return { categories, accounts };
+  }
+
   createWallet(userId: string, { name, type, balance }: CreateWalletDto) {
     return this.store.mutate(userId, (ledger) => {
       assertUniqueName(ledger.accounts, name, 'a wallet');

@@ -17,6 +17,6 @@ import { InviteMailer, SupabaseInviteMailer } from './invite-mailer';
     GroupExpensesService,
     { provide: InviteMailer, useClass: SupabaseInviteMailer },
   ],
-  exports: [GroupExpensesService],
+  exports: [GroupsService, GroupExpensesService],
 })
 export class GroupsModule {}

@@ -88,6 +88,15 @@ export class GroupsService {
     }));
   }
 
+  /** Just the id and name of each group I'm in (no balances: one cheap query). */
+  async names(userId: string): Promise<{ id: string; name: string }[]> {
+    return this.prisma.$queryRaw`
+      SELECT g.id, g.name FROM group_members m
+      JOIN groups g ON g.id = m.group_id
+      WHERE m.user_id = ${userId}::uuid AND m.left_at IS NULL
+      ORDER BY g.created_at DESC, g.id`;
+  }
+
   async create(userId: string, { name }: CreateGroupDto) {
     const group = await this.prisma.$transaction(
       (tx) =>

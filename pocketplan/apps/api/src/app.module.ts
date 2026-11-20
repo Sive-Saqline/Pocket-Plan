@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { AiModule } from './ai/ai.module';
 import { AuthModule } from './auth/auth.module';
 import { GroupsModule } from './groups/groups.module';
 import { LedgerModule } from './ledger/ledger.module';
@@ -15,6 +16,7 @@ import { ReportsModule } from './reports/reports.module';
     LedgerModule,
     GroupsModule,
     ReportsModule,
+    AiModule,
   ],
   controllers: [HealthController],
 })

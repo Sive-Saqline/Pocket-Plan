@@ -71,15 +71,22 @@ export interface TestApp {
   close(): Promise<void>;
 }
 
+/** Replaces one provider for a test, e.g. a fake AI. */
+export interface ProviderOverride {
+  provide: unknown;
+  useValue: unknown;
+}
+
 export async function createTestApp(
   modules: Type<unknown>[],
+  overrides: ProviderOverride[] = [],
 ): Promise<TestApp> {
   const dir = mkdtempSync(join(tmpdir(), 'pp-test-'));
   process.env.LEDGER_DIR = join(dir, 'ledger');
   const users = new InMemoryUsersRepository();
   const avatars = new InMemoryAvatarStorage();
 
-  const moduleRef = await Test.createTestingModule({
+  let builder = Test.createTestingModule({
     imports: [ConfigModule.forRoot({ isGlobal: true }), ...modules],
   })
     .overrideProvider(TokenVerifier)
@@ -89,8 +96,11 @@ export async function createTestApp(
     .overrideProvider(AvatarStorage)
     .useValue(avatars)
     .overrideProvider(LedgerStore)
-    .useClass(FileLedgerStore)
-    .compile();
+    .useClass(FileLedgerStore);
+  for (const o of overrides) {
+    builder = builder.overrideProvider(o.provide).useValue(o.useValue);
+  }
+  const moduleRef = await builder.compile();
 
   const app = moduleRef.createNestApplication();
   app.useGlobalPipes(

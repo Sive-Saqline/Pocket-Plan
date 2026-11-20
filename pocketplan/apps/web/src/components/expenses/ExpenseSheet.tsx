@@ -1,16 +1,20 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { TriangleAlert } from "lucide-react";
+import Link from "next/link";
+import { TriangleAlert, UsersRound } from "lucide-react";
 import { StatusDot } from "@/components/budgets/BudgetBar";
 import { CloseButton } from "@/components/ui/CloseButton";
+import type { PersonalSuggestion } from "@/lib/ai";
 import { ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { isoDate } from "@/lib/dates";
 import { type BudgetView, type Category, type Expense, type ExpenseInput, type Wallet } from "@/lib/ledger";
 import { parseTaka } from "@/lib/money";
 import { useApiData } from "@/lib/use-api-data";
+import { CategoryHint, useCategoryGuess } from "./CategoryHint";
 import { CategoryPicker, inputClass, WalletPicker } from "./Pickers";
+import { AiComposer, AskAiButton } from "./AiComposer";
 
 type Field = "amount" | "categoryId" | "accountId" | "expenseDate";
 
@@ -48,6 +52,13 @@ export function ExpenseSheet({
   const [confirmDelete, setConfirmDelete] = useState(false);
   // remounts the wallet picker each time the sheet opens, closing any half-done "+ Add"
   const [session, setSession] = useState(0);
+  // Ask AI is closed until the user opens it: manual entry comes first.
+  const [aiOpen, setAiOpen] = useState(false);
+  // The form as it was before the AI filled it, for Undo.
+  const beforeAi = useRef<{ amount: string; categoryId: string; accountId: string; expenseDate: string; description: string } | null>(null);
+  // The AI found a group in the sentence: offer to add it there instead.
+  const [groupHint, setGroupHint] = useState<{ id: string; name: string; text: string } | null>(null);
+  const { guess, suggest: suggestCategory, reset: resetGuess } = useCategoryGuess();
 
   const budgetMonth = expenseDate.slice(0, 7);
   const budgets = useApiData<BudgetView>(open && budgetMonth ? `/budgets?month=${budgetMonth}` : null);
@@ -66,14 +77,61 @@ export function ExpenseSheet({
       setFormError(null);
       setBusy(false);
       setConfirmDelete(false);
+      setGroupHint(null);
+      setAiOpen(false);
+      beforeAi.current = null;
+      resetGuess();
       setSession((s) => s + 1);
       dialog.showModal();
     } else if (!open && dialog.open) {
       dialog.close();
     }
-  }, [open, expense, wallets]);
+  }, [open, expense, wallets, resetGuess]);
 
   const clear = (field: Field) => setErrors((e) => ({ ...e, [field]: undefined }));
+
+  /** Fills only what the sentence gave; the user checks it and saves. */
+  function applySuggestion(s: PersonalSuggestion, text: string) {
+    // Undo goes back to before the first fill, even after several.
+    beforeAi.current ??= { amount, categoryId, accountId, expenseDate, description };
+    const filled: string[] = [];
+    if (s.amount !== null) {
+      setAmount(String(s.amount));
+      filled.push("amount");
+    }
+    if (s.categoryId) {
+      setCategoryId(s.categoryId);
+      filled.push("category");
+    }
+    if (s.accountId) {
+      setAccountId(s.accountId);
+      filled.push("wallet");
+    }
+    if (s.expenseDate) {
+      setExpenseDate(s.expenseDate);
+      filled.push("date");
+    }
+    if (s.description) {
+      setDescription(s.description);
+      filled.push("description");
+    }
+    setErrors({});
+    setFormError(null);
+    setGroupHint(s.group ? { ...s.group, text } : null);
+    return filled;
+  }
+
+  function undoSuggestion() {
+    const before = beforeAi.current;
+    if (!before) return;
+    setAmount(before.amount);
+    setCategoryId(before.categoryId);
+    setAccountId(before.accountId);
+    setExpenseDate(before.expenseDate);
+    setDescription(before.description);
+    setGroupHint(null);
+    beforeAi.current = null;
+  }
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -121,10 +179,11 @@ export function ExpenseSheet({
       className="m-auto mb-0 max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-t-2xl bg-surface p-0 text-text sm:mb-auto sm:rounded-2xl"
     >
       <form method="post" onSubmit={submit} noValidate className="flex flex-col gap-5 p-4 sm:p-6">
-        <header className="flex items-center justify-between">
-          <h2 id="expense-sheet-title" className="text-xl font-semibold">
+        <header className="flex items-center gap-2">
+          <h2 id="expense-sheet-title" className="flex-1 text-xl font-semibold">
             {expense ? "Edit expense" : "Add expense"}
           </h2>
+          {!expense && <AskAiButton open={aiOpen} onClick={() => setAiOpen((o) => !o)} />}
           <CloseButton onClick={onClose} />
         </header>
 
@@ -132,6 +191,31 @@ export function ExpenseSheet({
           <p role="alert" className="rounded-lg border border-danger/40 bg-danger/10 px-3 py-2.5 text-sm">
             {formError}
           </p>
+        )}
+
+        {!expense && aiOpen && (
+          <AiComposer<PersonalSuggestion>
+            key={`ai-${session}`}
+            placeholder="e.g. Lunch 250 by bKash yesterday"
+            onSuggestion={applySuggestion}
+            onUndo={undoSuggestion}
+            onClose={() => setAiOpen(false)}
+          />
+        )}
+
+        {groupHint && (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl border border-border px-3 py-2 text-sm">
+            <UsersRound aria-hidden size={18} className="shrink-0 text-accent" />
+            <p className="min-w-0 flex-1">
+              This sounds like a shared expense in <span className="font-semibold">{groupHint.name}</span>.
+            </p>
+            <Link
+              href={`/groups/${groupHint.id}?type=${encodeURIComponent(groupHint.text)}`}
+              className="inline-flex min-h-11 items-center font-semibold text-accent hover:underline"
+            >
+              Add it to {groupHint.name}
+            </Link>
+          </div>
         )}
 
         <div>
@@ -174,6 +258,15 @@ export function ExpenseSheet({
           }}
           error={errors.categoryId}
         >
+          {guess && !categoryId && (
+            <CategoryHint
+              guess={guess}
+              onUse={() => {
+                setCategoryId(guess.value);
+                clear("categoryId");
+              }}
+            />
+          )}
           {budgetNote && (
             <p
               role="status"
@@ -192,7 +285,7 @@ export function ExpenseSheet({
         </CategoryPicker>
 
         <WalletPicker
-          key={session}
+          key={`wallets-${session}`}
           wallets={wallets}
           value={accountId}
           onChange={(id) => {
@@ -230,6 +323,9 @@ export function ExpenseSheet({
               id="exp-desc"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              onBlur={() => {
+                if (!categoryId) void suggestCategory(description);
+              }}
               placeholder="e.g. Lunch at canteen"
               maxLength={120}
               className={inputClass}

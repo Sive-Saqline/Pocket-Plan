@@ -49,7 +49,7 @@ Last re-planned: 2026-11-13. Supabase moved forward to Step 11, so every later f
 | 15 | [Groups & members](15-groups-and-members.md) | 6.10, 6.11 | 🟡 Built, waiting for your test |
 | 16 | [Group expenses & splitting](16-group-expenses-and-splitting.md) | 6.12 | 🟡 Built, waiting for your test |
 | 17 | [Balances, settlements & group budgets](17-balances-settlements-group-budgets.md) | 6.13, 9 | 🟡 Built, waiting for your test |
-| 18 | [AI: plain-language entry & auto-categorize](18-ai-entry-and-categorize.md) | 6.14, 6.15 | ⏳ |
+| 18 | [AI: plain-language entry & auto-categorize](18-ai-entry-and-categorize.md) | 6.14, 6.15 | 🟡 Built, waiting for your test |
 | 19 | [Smart checks: unusual, duplicate & repeating expenses](19-smart-checks.md) | 6.17, 6.18 | ⏳ |
 | 20 | [AI: monthly insights](20-ai-monthly-insights.md) | 6.16 | ⏳ |
 | 21 | [Installable app (PWA)](21-pwa.md) | Phase 8 | ⏳ |
@@ -76,4 +76,4 @@ Last re-planned: 2026-11-13. Supabase moved forward to Step 11, so every later f
 
 ## Not in this roadmap (deferred by the PRD)
 
-Capacitor app-store wrap (optional Phase 15), multi-currency, receipt scanning, bank integrations, voice input, push notifications, income tracking. See PRD §14.
+Capacitor app-store wrap (optional Phase 15), multi-currency, receipt scanning, bank integrations, push notifications, income tracking. See PRD §14. (Voice input was also deferred, but a simple browser-based version was added to Ask AI in Step 18 at your request.)

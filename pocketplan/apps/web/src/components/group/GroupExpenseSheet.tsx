@@ -1,14 +1,17 @@
 "use client";
 
 import { Check, Trash2 } from "lucide-react";
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { CategoryHint, useCategoryGuess } from "@/components/expenses/CategoryHint";
 import { inputClass } from "@/components/expenses/Pickers";
+import { AiComposer, AskAiButton } from "@/components/expenses/AiComposer";
 import { Button } from "@/components/ui/Button";
 import { CategoryIconGrid } from "@/components/ui/CategoryIconGrid";
 import { ConfirmDelete } from "@/components/ui/ConfirmDelete";
 import { CATEGORY_ICON_OPTIONS } from "@/components/ui/icons";
 import { FormError, Sheet } from "@/components/ui/Sheet";
 import { UserAvatar } from "@/components/ui/UserAvatar";
+import type { GroupSuggestion } from "@/lib/ai";
 import { ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { isoDate } from "@/lib/dates";
@@ -40,6 +43,7 @@ export function GroupExpenseSheet({
   open,
   group,
   expense,
+  initialText,
   onClose,
   onDone,
 }: {
@@ -47,6 +51,8 @@ export function GroupExpenseSheet({
   group: GroupDetail;
   /** null = new expense */
   expense: GroupExpense | null;
+  /** Prefills "Type it" (handed over from the personal Add expense form). */
+  initialText?: string;
   onClose: () => void;
   onDone: (message: string) => void;
 }) {
@@ -67,6 +73,22 @@ export function GroupExpenseSheet({
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  // The category starts as "food"; only suggest one until the user picks.
+  const [categoryTouched, setCategoryTouched] = useState(false);
+  const { guess, suggest: suggestCategory, reset: resetGuess } = useCategoryGuess(group.id);
+  // Ask AI is closed unless the user opens it (or a sentence was handed over).
+  const [aiOpen, setAiOpen] = useState(false);
+  const beforeAi = useRef<{
+    description: string;
+    amount: string;
+    date: string;
+    category: string;
+    categoryTouched: boolean;
+    paidBy: string;
+    splitType: SplitType;
+    ticked: string[];
+    values: Record<string, string>;
+  } | null>(null);
 
   // Someone in this expense has left: it stays as it is (the API refuses changes).
   const involvesFormer =
@@ -82,6 +104,10 @@ export function GroupExpenseSheet({
     setFormError(null);
     setBusy(false);
     setConfirmDelete(false);
+    setCategoryTouched(!!expense);
+    resetGuess();
+    setAiOpen(!expense && !!initialText);
+    beforeAi.current = null;
     if (expense) {
       setDescription(expense.description);
       setAmount(String(expense.amount));
@@ -103,7 +129,72 @@ export function GroupExpenseSheet({
       setTicked(active.map((m) => m.userId));
       setValues({});
     }
-  }, [open, expense, active, me]);
+  }, [open, expense, active, me, resetGuess, initialText]);
+
+  /** Fills only what the sentence gave; the user checks it and saves. */
+  function applySuggestion(s: GroupSuggestion) {
+    // Undo goes back to before the first fill, even after several.
+    beforeAi.current ??= { description, amount, date, category, categoryTouched, paidBy, splitType, ticked, values };
+    const filled: string[] = [];
+    if (s.amount !== null) {
+      setAmount(String(s.amount));
+      filled.push("amount");
+    }
+    if (s.description) {
+      setDescription(s.description);
+      filled.push("description");
+    }
+    if (s.expenseDate) {
+      setDate(s.expenseDate);
+      filled.push("date");
+    }
+    if (s.category) {
+      setCategory(s.category);
+      setCategoryTouched(true);
+      filled.push("category");
+    }
+    if (s.paidBy && active.some((m) => m.userId === s.paidBy)) {
+      setPaidBy(s.paidBy);
+      filled.push("who paid");
+    }
+    const people = s.participants?.filter((p) => active.some((m) => m.userId === p.userId)) ?? [];
+    if (people.length) {
+      setTicked(people.map((p) => p.userId));
+      filled.push("who's in it");
+    }
+    if (s.splitType) {
+      filled.push("the split");
+      setSplitType(s.splitType);
+      const given = people.filter((p) => p.value !== null);
+      setValues(
+        s.splitType === "EQUAL"
+          ? {}
+          : given.length
+            ? Object.fromEntries(given.map((p) => [p.userId, String(p.value)]))
+            : s.splitType === "SHARES"
+              ? Object.fromEntries(active.map((m) => [m.userId, "1"]))
+              : {},
+      );
+    }
+    setErrors({});
+    setFormError(null);
+    return filled;
+  }
+
+  function undoSuggestion() {
+    const b = beforeAi.current;
+    if (!b) return;
+    setDescription(b.description);
+    setAmount(b.amount);
+    setDate(b.date);
+    setCategory(b.category);
+    setCategoryTouched(b.categoryTouched);
+    setPaidBy(b.paidBy);
+    setSplitType(b.splitType);
+    setTicked(b.ticked);
+    setValues(b.values);
+    beforeAi.current = null;
+  }
 
   const parsedAmount = parseTaka(amount);
   // Member order keeps leftover-paisa rounding predictable.
@@ -171,7 +262,13 @@ export function GroupExpenseSheet({
   const title = !expense ? "Add shared expense" : readOnly ? "Shared expense" : "Edit shared expense";
 
   return (
-    <Sheet open={open} onClose={onClose} title={title} wide>
+    <Sheet
+      open={open}
+      onClose={onClose}
+      title={title}
+      wide
+      actions={!expense && <AskAiButton open={aiOpen} onClick={() => setAiOpen((o) => !o)} />}
+    >
       <form onSubmit={submit} noValidate className="flex flex-col gap-5">
         <FormError message={formError} />
         {expense && readOnly && (
@@ -182,6 +279,17 @@ export function GroupExpenseSheet({
           </p>
         )}
 
+        {!expense && aiOpen && (
+          <AiComposer<GroupSuggestion>
+            groupId={group.id}
+            initialText={initialText}
+            placeholder="e.g. Nusrat paid 900 for groceries"
+            onSuggestion={applySuggestion}
+            onUndo={undoSuggestion}
+            onClose={() => setAiOpen(false)}
+          />
+        )}
+
         <fieldset disabled={readOnly || busy} className="flex flex-col gap-5">
           <Field id="gx-desc" label="Description" error={errors.description}>
             <input
@@ -190,6 +298,9 @@ export function GroupExpenseSheet({
               maxLength={120}
               placeholder="e.g. Groceries at Shwapno"
               onChange={(e) => setDescription(e.target.value)}
+              onBlur={() => {
+                if (!categoryTouched) void suggestCategory(description);
+              }}
               aria-invalid={!!errors.description}
               className={inputClass}
             />
@@ -228,7 +339,23 @@ export function GroupExpenseSheet({
             <legend className="mb-2 text-sm font-medium">
               Category: <span className="text-text-muted">{categoryLabel(category)}</span>
             </legend>
-            <CategoryIconGrid value={category} onChange={setCategory} compact />
+            <CategoryIconGrid
+              value={category}
+              onChange={(key) => {
+                setCategory(key);
+                setCategoryTouched(true);
+              }}
+              compact
+            />
+            {guess && !categoryTouched && guess.value !== category && (
+              <CategoryHint
+                guess={guess}
+                onUse={() => {
+                  setCategory(guess.value);
+                  setCategoryTouched(true);
+                }}
+              />
+            )}
           </fieldset>
 
           <fieldset>

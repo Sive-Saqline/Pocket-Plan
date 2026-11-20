@@ -103,3 +103,24 @@ body {
 dialog::backdrop {
   background: var(--overlay);
 }
+
+/* Ask AI box while it's reading: a soft pulsing glow in the accent colour. */
+@keyframes ai-thinking {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 0%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 18%, transparent);
+  }
+}
+
+.ai-thinking {
+  animation: ai-thinking 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-thinking {
+    animation: none;
+  }
+}

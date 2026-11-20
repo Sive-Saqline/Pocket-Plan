@@ -14,12 +14,15 @@ export function Sheet({
   title,
   children,
   wide = false,
+  actions,
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
   children: ReactNode;
   wide?: boolean;
+  /** Extra buttons in the header, before Close. */
+  actions?: ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const id = `sheet-${title.replace(/\W+/g, "-").toLowerCase()}`;
@@ -42,10 +45,11 @@ export function Sheet({
     >
       {open && (
         <div className="flex flex-col gap-5 p-4 sm:p-6">
-          <header className="flex items-center justify-between gap-2">
-            <h2 id={id} className="text-xl font-semibold">
+          <header className="flex items-center gap-2">
+            <h2 id={id} className="flex-1 text-xl font-semibold">
               {title}
             </h2>
+            {actions}
             <CloseButton onClick={onClose} />
           </header>
           {children}

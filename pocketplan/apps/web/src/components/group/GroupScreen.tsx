@@ -2,7 +2,7 @@
 
 import { ArrowLeft, SearchX } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AppShell, Fab } from "@/components/app/AppShell";
 import { buttonClass } from "@/components/ui/Button";
 import { Card, ErrorBanner, SkeletonRows } from "@/components/ui/Card";
@@ -34,6 +34,19 @@ export function GroupScreen({ groupId }: { groupId: string }) {
   const [month, setMonth] = useState(currentMonth());
   const toast = useToast();
   const [sheet, setSheet] = useState<{ open: boolean; expense: GroupExpense | null }>({ open: false, expense: null });
+  // ?type=<sentence>: sent from the personal Add expense form ("Add it to <group>").
+  const [typedText, setTypedText] = useState<string | undefined>();
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const text = url.searchParams.get("type");
+    if (!text) return;
+    setTypedText(text.slice(0, 300));
+    setSheet({ open: true, expense: null });
+    // drop it from the address so a reload doesn't reopen the form
+    url.searchParams.delete("type");
+    window.history.replaceState(null, "", url.pathname + url.search + url.hash);
+  }, []);
 
   const base = `/groups/${groupId}`;
   const group = useApiData<GroupDetail>(base);
@@ -54,6 +67,7 @@ export function GroupScreen({ groupId }: { groupId: string }) {
 
   const done = (message: string) => {
     setSheet({ open: false, expense: null });
+    setTypedText(undefined);
     refresh();
     toast.show(message);
   };
@@ -147,7 +161,11 @@ export function GroupScreen({ groupId }: { groupId: string }) {
             open={sheet.open}
             group={g}
             expense={sheet.expense}
-            onClose={() => setSheet({ open: false, expense: null })}
+            initialText={typedText}
+            onClose={() => {
+              setSheet({ open: false, expense: null });
+              setTypedText(undefined);
+            }}
             onDone={done}
           />
         </>
